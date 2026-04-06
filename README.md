@@ -1,105 +1,168 @@
 # RAG Diagnostic Agent
 
-Multi-modal AI project for plant disease diagnosis that combines a vision
-pipeline with retrieval-augmented generation (RAG). The intended flow is:
-an image is classified for likely disease symptoms, then the system retrieves
-relevant treatment guidance from a knowledge base.
+RAG Diagnostic Agent is a plant disease diagnosis project intended to combine
+computer vision with retrieval-augmented generation (RAG). The target workflow
+is straightforward: classify a plant image, then retrieve treatment guidance
+from a curated knowledge base.
 
-## Current Status
+## Current State
 
-This repository currently provides the project structure and module scaffolding
-for the full system. Most runtime modules are placeholders with docstrings, so
-the codebase is best understood as a clean starting point for implementation
-rather than a finished application.
+This repository is an early scaffold, not a finished application.
+
+- The package structure is in place for training, inference, orchestration,
+  FastAPI serving, and a Streamlit UI.
+- Most implementation files currently contain module stubs rather than working
+  logic.
+- The dataset has now been organized into processed `train`, `val`, and `test`
+  folders for model development.
+
+If you are contributing to this repo, treat it as a clean foundation for
+building the full pipeline rather than a runnable end-to-end product today.
+
+## Planned Architecture
+
+The intended system has two main parts:
+
+1. A vision model that identifies plant disease classes from leaf images.
+2. A RAG layer that retrieves supporting treatment or management information
+   from a document knowledge base.
+
+Those parts are expected to be connected by the orchestration layer in
+`src/orchestrator/`.
 
 ## Tech Stack
 
 - Python 3.12+
-- PyTorch and TorchVision for the vision pipeline
-- LangChain, ChromaDB, and Ollama for RAG components
-- FastAPI for API serving
-- Streamlit for an interactive UI
-- Pydantic for request and response schemas
+- PyTorch and TorchVision
+- LangChain
+- ChromaDB
+- Ollama
+- FastAPI
+- Streamlit
+- Pydantic
+- Pandas
 
-## Repository Structure
+## Repository Layout
 
 ```text
 app/
-  main.py              FastAPI application entry point
-  dependencies.py      Shared FastAPI dependencies
-  middleware.py        Middleware and exception handling
-  model_loader.py      Serving-time model loading
-  predict.py           Inference entry point for the API layer
-  schemas.py           API schemas
+  main.py              FastAPI entry point scaffold
+  dependencies.py      Shared FastAPI dependencies scaffold
+  middleware.py        Middleware scaffold
+  model_loader.py      Serving-time model loading scaffold
+  predict.py           API prediction scaffold
+  schemas.py           API schema scaffold
   routers/             API router package
   schemas/             Schema package
   templates/           HTML templates
-  streamlit.py         Streamlit user interface
+  streamlit.py         Streamlit UI scaffold
 
 src/
-  data/                Dataset loading and label encoding
-  model/               Model loading, training, evaluation, prediction
-  pipelines/           End-to-end pipeline scripts
-  rag/                 Retrieval ingestion components
-  vision/              Vision training entry points
-  orchestrator/        Vision + RAG orchestration
-  utils.py             Shared utilities
+  data/                Dataset loading and label encoding scaffolds
+  model/               Model loading, training, evaluation, prediction scaffolds
+  pipelines/           End-to-end pipeline module scaffolds
+  rag/                 Retrieval ingestion scaffold
+  vision/              Vision training scaffold
+  orchestrator/        Vision + RAG orchestration scaffold
+  utils.py             Shared utilities module
 
 dataset/
-  raw/                 Plant image dataset
+  raw/                 Raw image dataset directory
+  processed/           Split dataset for model training and evaluation
+    train/             Training split
+    val/               Validation split
+    test/              Test split
 
-artifacts/
-  Model and pipeline outputs
+artifacts/             Saved models and generated outputs
+notebook/              Exploratory notebooks
 ```
 
-## Setup
+## Installation
+
+Using `uv`:
+
+```bash
+uv sync
+```
+
+Using `pip` and a virtual environment:
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+pip install -e .
 ```
 
-If you are using the local RAG stack with Ollama:
+## Local Development
+
+If you plan to work on the RAG stack locally, start Ollama separately and pull
+the model you want to use:
 
 ```bash
 ollama serve
 ollama pull llama3
 ```
 
-## Common Commands
+## Dataset Preparation
 
-The repository guidance currently points to these execution commands:
+The balanced image dataset in `dataset/raw/balance dataset` has been copied
+into `dataset/processed` using a class-wise split:
+
+- `train`: 60%
+- `val`: 30%
+- `test`: 10%
+
+Current image counts:
+
+- `train`: 8083
+- `val`: 4040
+- `test`: 1351
+
+The raw dataset remains unchanged. The processed dataset is organized in the
+standard image-classification layout:
+
+```text
+dataset/processed/
+  train/<class_name>/
+  val/<class_name>/
+  test/<class_name>/
+```
+
+## Entry Points
+
+These modules exist as project entry points, but most are not implemented yet:
 
 ```bash
+python main.py
 python -m src.rag.ingest
 python -m src.vision.train
 python -m src.orchestrator.main
-streamlit run app/streamlit.py
 uvicorn app.main:app --reload
+streamlit run app/streamlit.py
 ```
 
-Some of these entry points are scaffolded and may require implementation before
-they run successfully.
+At the moment, only `python main.py` is expected to produce a visible result,
+and that is a simple placeholder message.
 
 ## Development Notes
 
-- Follow PEP 8 with a maximum line length of 88 characters.
-- Use type annotations on all function signatures.
-- Add Google-style docstrings to public classes, methods, and functions.
-- Keep training logic in `src/` and serving logic in `app/`.
-- Load serving-time models from `artifacts/`, not from training code paths.
+- Keep training and ML pipeline logic inside `src/`.
+- Keep API and UI serving concerns inside `app/`.
+- Load deployed model artifacts from `artifacts/`.
+- Follow PEP 8 and prefer fully typed function signatures.
+- Use concise module boundaries so training, serving, and orchestration remain
+  separate.
 
-## Intended Workflow
+## Suggested Next Steps
 
-1. Train or load the vision model.
-2. Ingest the knowledge base for retrieval.
-3. Run the orchestrator or API layer to combine prediction with retrieved
-   treatment guidance.
+- Implement dataset loading and label encoding in `src/data/`.
+- Build the training and evaluation loop in `src/model/`.
+- Add PDF or document ingestion in `src/rag/ingest.py`.
+- Expose inference through `app/main.py` and `app/predict.py`.
+- Connect prediction and retrieval in `src/orchestrator/main.py`.
 
-## Notes
+## Project Metadata
 
-- The dataset included in `dataset/raw/` appears to be PlantVillage-style
-  imagery for plant disease classification.
-- The project metadata is defined in `pyproject.toml` under the package name
-  `rag-diagnostic-agent`.
+- Package name: `rag-diagnostic-agent`
+- Version: `0.1.0`
+- Python requirement: `>=3.12`
