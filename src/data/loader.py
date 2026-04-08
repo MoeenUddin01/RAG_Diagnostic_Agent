@@ -8,9 +8,9 @@ from src.data.dataset import get_datasets
 
 
 def get_dataloaders(
-    train_dir: str = "data/train",
-    val_dir: str = "data/val",
-    test_dir: str = "data/test",
+    train_dir: str = "dataset/processed/train",
+    val_dir: str = "dataset/processed/val",
+    test_dir: str = "dataset/processed/test",
     batch_size: int = 32,
 ) -> tuple[DataLoader, DataLoader, DataLoader]:
     """Create DataLoaders for train, validation, and test datasets.

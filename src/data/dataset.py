@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from pathlib import Path
-
 from torchvision.datasets import ImageFolder
 
 from src.data.transforms import (
@@ -14,9 +12,9 @@ from src.data.transforms import (
 
 
 def get_datasets(
-    train_dir: str = "data/train",
-    val_dir: str = "data/val",
-    test_dir: str = "data/test",
+    train_dir: str = "dataset/processed/train",
+    val_dir: str = "dataset/processed/val",
+    test_dir: str = "dataset/processed/test",
 ) -> tuple[ImageFolder, ImageFolder, ImageFolder]:
     """Create ImageFolder datasets for train, validation, and test splits.
 
