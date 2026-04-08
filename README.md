@@ -111,6 +111,9 @@ The repository now separates dataset preparation into dedicated modules:
 - `src/data/balancing.py` for balancing the raw dataset
 - `src/data/splitting.py` for train/val/test splitting
 - `src/data/common.py` for shared dataset filesystem helpers
+- `src/data/transforms.py` for image preprocessing and augmentation
+- `src/data/dataset.py` for PyTorch ImageFolder dataset creation
+- `src/data/loader.py` for DataLoader creation with batching and shuffling
 
 Runnable pipeline scripts remain in `src/pipelines/`.
 
@@ -174,6 +177,53 @@ dataset/processed/
 
 The splitting script uses a fixed random seed by default (`42`) so the export
 is reproducible.
+
+### 3. Load data for training
+
+After splitting, use the data loading utilities to create PyTorch datasets and
+DataLoaders:
+
+```python
+from src.data import get_dataloaders, get_datasets
+
+# Option 1: Get DataLoaders directly (recommended for training)
+train_loader, val_loader, test_loader = get_dataloaders(
+    train_dir="dataset/processed/train",
+    val_dir="dataset/processed/val",
+    test_dir="dataset/processed/test",
+    batch_size=32,
+)
+
+# Option 2: Get datasets only (for custom DataLoader setup)
+train_ds, val_ds, test_ds = get_datasets(
+    train_dir="dataset/processed/train",
+    val_dir="dataset/processed/val",
+    test_dir="dataset/processed/test",
+)
+```
+
+The data loading pipeline applies these transforms:
+
+| Split | Transforms                                                                 |
+|-------|----------------------------------------------------------------------------|
+| Train | Resize(224,224) → RandomHorizontalFlip → ToTensor → Normalize(ImageNet)    |
+| Val   | Resize(224,224) → ToTensor → Normalize(ImageNet)                           |
+| Test  | Resize(224,224) → ToTensor → Normalize(ImageNet)                           |
+
+DataLoaders configuration:
+
+- **Train**: `shuffle=True` (for parameter updates), `num_workers=4`, `pin_memory=True`
+- **Val/Test**: `shuffle=False` (for consistent evaluation)
+
+## Data Module Summary
+
+| File            | Purpose                                | Key Function                                                               |
+|-----------------|----------------------------------------|----------------------------------------------------------------------------|
+| `transforms.py` | Image preprocessing pipelines          | `get_train_transform()`, `get_val_transform()`, `get_test_transform()`     |
+| `dataset.py`    | Create PyTorch datasets from split folders | `get_datasets()` returns `ImageFolder` objects                             |
+| `loader.py`     | Batch and iterate datasets for training | `get_dataloaders()` returns `DataLoader` objects                           |
+
+**Import chain:** `transforms.py` → `dataset.py` → `loader.py`
 
 ## Entry Points
 

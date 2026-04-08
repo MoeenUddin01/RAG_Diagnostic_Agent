@@ -12,10 +12,21 @@ from src.data.common import (
     list_image_files,
     summarize_dataset,
 )
+from src.data.dataset import (
+    get_datasets,
+)
+from src.data.loader import (
+    get_dataloaders,
+)
 from src.data.splitting import (
     SplitSummary,
     compute_split_counts,
     create_split_dataset,
+)
+from src.data.transforms import (
+    get_test_transform,
+    get_train_transform,
+    get_val_transform,
 )
 
 __all__ = [
@@ -25,6 +36,11 @@ __all__ = [
     "compute_split_counts",
     "create_balanced_dataset",
     "create_split_dataset",
+    "get_dataloaders",
+    "get_datasets",
+    "get_test_transform",
+    "get_train_transform",
+    "get_val_transform",
     "list_image_files",
     "select_balanced_files",
     "summarize_dataset",
