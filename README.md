@@ -13,6 +13,7 @@ This repository is a work in progress. The following components are implemented:
 - **Model training**: EfficientNet-B2 training loop with two-phase fine-tuning
   (frozen backbone warm-up + full fine-tuning), checkpointing
 - **Model evaluation**: Accuracy, classification report, confusion matrix
+- **Utilities**: Device selection (CUDA/MPS/CPU), project root, artifacts directory helpers
 - **API/UI**: Scaffolds only (not yet functional)
 - **RAG**: Not yet implemented
 
