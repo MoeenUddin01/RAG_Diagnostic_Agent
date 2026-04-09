@@ -10,10 +10,12 @@ Checkpoints the best model (by validation loss) to ``artifacts/``.
 
 from __future__ import annotations
 
+import json
 import time
 from pathlib import Path
 from typing import Optional
 
+import mlflow
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
@@ -81,7 +83,13 @@ def train(
     epochs: int = 30,
     freeze_epochs: int = 5,
     lr: float = 3e-4,
+    weight_decay: float = 1e-4,
+    patience: int = 5,
+    seed: int = 42,
+    class_names: list[str] | None = None,
     artifacts_dir: Path = Path("artifacts"),
+    experiment_name: str = "plant_disease_classifier",
+    run_name: str | None = None,
 ) -> nn.Module:
     """Train EfficientNet-B2 on the plant disease dataset.
 
@@ -93,6 +101,9 @@ def train(
     ``artifacts/best_model.pt``. A final checkpoint is saved to
     ``artifacts/last_model.pt`` regardless of performance.
 
+    All hyperparameters, metrics, and artifacts are logged to MLflow for
+    experiment tracking.
+
     Args:
         train_loader: DataLoader for the training split.
         val_loader: DataLoader for the validation split.
@@ -100,7 +111,13 @@ def train(
         epochs: Total number of training epochs.
         freeze_epochs: Number of initial epochs to keep the backbone frozen.
         lr: Initial learning rate for AdamW.
+        weight_decay: L2 regularization coefficient for AdamW.
+        patience: Early stopping patience (not currently implemented).
+        seed: Random seed for reproducibility (not currently implemented).
+        class_names: Optional list of class label names.
         artifacts_dir: Directory where checkpoints are written.
+        experiment_name: MLflow experiment name for tracking.
+        run_name: Optional MLflow run name for this training run.
 
     Returns:
         The trained ``nn.Module`` with the best validation-loss weights loaded.
@@ -113,79 +130,137 @@ def train(
             f"freeze_epochs ({freeze_epochs}) must be less than epochs ({epochs})."
         )
 
-    device = get_device()
-    model = build_model(
-        num_classes=num_classes,
-        pretrained=True,
-        freeze_backbone=True,
-    ).to(device)
+    mlflow.set_experiment(experiment_name)
 
-    criterion = nn.CrossEntropyLoss()
-    optimizer = AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=lr,
-        weight_decay=1e-4,
-    )
-    scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
+    with mlflow.start_run(run_name=run_name):
+        device = get_device()
+        model = build_model(
+            num_classes=num_classes,
+            pretrained=True,
+            freeze_backbone=True,
+        ).to(device)
 
-    best_val_loss = float("inf")
-    history: list[dict] = []
-
-    print(f"Training on {device} for {epochs} epochs "
-          f"(backbone frozen for first {freeze_epochs}).\n")
-
-    for epoch in range(epochs):
-        epoch_start = time.time()
-
-        # Phase transition: unfreeze backbone and reset optimiser
-        if epoch == freeze_epochs:
-            print(f"[Epoch {epoch}] Unfreezing backbone — full fine-tune begins.\n")
-            unfreeze_backbone(model)
-            optimizer = AdamW(model.parameters(), lr=lr / 10, weight_decay=1e-4)
-            scheduler = CosineAnnealingLR(
-                optimizer, T_max=epochs - freeze_epochs, eta_min=1e-6
-            )
-
-        train_loss, train_acc = _run_epoch(
-            model, train_loader, criterion, optimizer, device, is_train=True
+        criterion = nn.CrossEntropyLoss()
+        optimizer = AdamW(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=lr,
+            weight_decay=weight_decay,
         )
-        val_loss, val_acc = _run_epoch(
-            model, val_loader, criterion, None, device, is_train=False
-        )
-        scheduler.step()
+        scheduler = CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
 
-        elapsed = time.time() - epoch_start
-        record = {
-            "epoch": epoch,
-            "train_loss": train_loss,
-            "train_acc": train_acc,
-            "val_loss": val_loss,
-            "val_acc": val_acc,
-        }
-        history.append(record)
+        # Calculate batch size from dataloader
+        batch_size = len(train_loader.dataset) / len(train_loader)
+
+        # Log hyperparameters
+        mlflow.log_params(
+            {
+                "epochs": epochs,
+                "freeze_epochs": freeze_epochs,
+                "lr": lr,
+                "weight_decay": weight_decay,
+                "patience": patience,
+                "seed": seed,
+                "batch_size": int(batch_size),
+                "num_classes": num_classes,
+            }
+        )
+
+        best_val_loss = float("inf")
+        best_val_acc = 0.0
+        history: list[dict] = []
 
         print(
-            f"Epoch {epoch + 1:03d}/{epochs} | "
-            f"train_loss={train_loss:.4f} train_acc={train_acc:.4f} | "
-            f"val_loss={val_loss:.4f} val_acc={val_acc:.4f} | "
-            f"{elapsed:.1f}s"
+            f"Training on {device} for {epochs} epochs "
+            f"(backbone frozen for first {freeze_epochs}).\n"
         )
 
-        if val_loss < best_val_loss:
-            best_val_loss = val_loss
-            save_checkpoint(
-                model, optimizer, epoch, val_loss,
-                artifacts_dir=artifacts_dir,
-                filename="best_model.pt",
-            )
-            print(f"  -> New best model saved (val_loss={val_loss:.4f})")
+        for epoch in range(epochs):
+            epoch_start = time.time()
 
-    save_checkpoint(
-        model, optimizer, epochs - 1, val_loss,
-        artifacts_dir=artifacts_dir,
-        filename="last_model.pt",
-    )
-    print("\nTraining complete.")
+            # Phase transition: unfreeze backbone and reset optimiser
+            if epoch == freeze_epochs:
+                print(f"[Epoch {epoch}] Unfreezing backbone — full fine-tune begins.\n")
+                unfreeze_backbone(model)
+                optimizer = AdamW(
+                    model.parameters(), lr=lr / 10, weight_decay=weight_decay
+                )
+                scheduler = CosineAnnealingLR(
+                    optimizer, T_max=epochs - freeze_epochs, eta_min=1e-6
+                )
+
+            train_loss, train_acc = _run_epoch(
+                model, train_loader, criterion, optimizer, device, is_train=True
+            )
+            val_loss, val_acc = _run_epoch(
+                model, val_loader, criterion, None, device, is_train=False
+            )
+            scheduler.step()
+
+            elapsed = time.time() - epoch_start
+            record = {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "train_acc": train_acc,
+                "val_loss": val_loss,
+                "val_acc": val_acc,
+            }
+            history.append(record)
+
+            # Log metrics for this epoch
+            mlflow.log_metrics(
+                {
+                    "train_loss": train_loss,
+                    "train_acc": train_acc,
+                    "val_loss": val_loss,
+                    "val_acc": val_acc,
+                },
+                step=epoch,
+            )
+
+            print(
+                f"Epoch {epoch + 1:03d}/{epochs} | "
+                f"train_loss={train_loss:.4f} train_acc={train_acc:.4f} | "
+                f"val_loss={val_loss:.4f} val_acc={val_acc:.4f} | "
+                f"{elapsed:.1f}s"
+            )
+
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                best_val_acc = val_acc
+                save_checkpoint(
+                    model,
+                    optimizer,
+                    epoch,
+                    val_loss,
+                    artifacts_dir=artifacts_dir,
+                    filename="best_model.pt",
+                    class_names=class_names,
+                )
+                print(f"  -> New best model saved (val_loss={val_loss:.4f})")
+
+        save_checkpoint(
+            model,
+            optimizer,
+            epochs - 1,
+            val_loss,
+            artifacts_dir=artifacts_dir,
+            filename="last_model.pt",
+            class_names=class_names,
+        )
+        print("\nTraining complete.")
+
+        # Log summary metrics
+        mlflow.log_metric("best_val_loss", best_val_loss)
+        mlflow.log_metric("best_val_acc", best_val_acc)
+
+        # Save history to JSON
+        history_path = artifacts_dir / "history.json"
+        with history_path.open("w") as f:
+            json.dump(history, f, indent=2)
+
+        # Log artifacts
+        mlflow.log_artifact(str(artifacts_dir / "best_model.pt"))
+        mlflow.log_artifact(str(history_path))
 
     # Return model with best weights
     best_ckpt = artifacts_dir / "best_model.pt"

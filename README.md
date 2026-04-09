@@ -10,15 +10,19 @@ from a curated knowledge base.
 This repository is a work in progress. The following components are implemented:
 
 - **Data pipeline**: Dataset balancing, splitting, loading with `WeightedRandomSampler`
-- **Model training**: EfficientNet-B2 training loop with two-phase fine-tuning
-  (frozen backbone warm-up + full fine-tuning), checkpointing
-- **Model evaluation**: Accuracy, classification report, confusion matrix
+- **Model training**: Production-ready CLI pipeline with EfficientNet-B2 two-phase
+  fine-tuning (frozen backbone warm-up + full fine-tuning), checkpointing,
+  automatic model saving, and MLflow experiment tracking
+- **Model evaluation**: Production-ready CLI pipeline with accuracy metrics,
+  classification report, confusion matrix, and checkpoint loading
+- **Experiment tracking**: MLflow integration for hyperparameter, metric, and artifact
+  logging with visual experiment comparison
 - **Utilities**: Device selection (CUDA/MPS/CPU), project root, artifacts directory helpers
 - **API/UI**: Scaffolds only (not yet functional)
 - **RAG**: Not yet implemented
 
-If you are contributing to this repo, treat it as a clean foundation for
-building the full pipeline rather than a runnable end-to-end product today.
+The training and evaluation pipelines are fully functional and can be run via
+command-line interfaces with full MLflow experiment tracking.
 
 ## Planned Architecture
 
@@ -42,6 +46,7 @@ Those parts are expected to be connected by the orchestration layer in
 - Streamlit
 - Pydantic
 - Pandas
+- MLflow
 
 ## Repository Layout
 
@@ -253,6 +258,154 @@ DataLoaders configuration:
 
 **Import chain:** `transforms.py` → `dataset.py` → `loader.py`
 
+## Model Training
+
+Train the EfficientNet-B2 model on the prepared dataset using the production-ready
+CLI pipeline:
+
+```bash
+python -m src.pipelines.model_training
+```
+
+### Training CLI Flags
+
+| Flag                 | Type  | Default                   | Description                                          |
+|----------------------|-------|---------------------------|------------------------------------------------------|
+| `--train-dir`        | Path  | `dataset/processed/train` | Path to training data directory                      |
+| `--val-dir`          | Path  | `dataset/processed/val`   | Path to validation data directory                    |
+| `--batch-size`       | int   | `32`                      | Number of samples per batch                          |
+| `--epochs`           | int   | `30`                      | Total number of training epochs                      |
+| `--freeze-epochs`    | int   | `5`                       | Number of initial epochs with backbone frozen        |
+| `--lr`               | float | `3e-4`                    | Initial learning rate for AdamW                      |
+| `--weight-decay`     | float | `1e-4`                    | L2 regularization coefficient                        |
+| `--patience`         | int   | `5`                       | Early stopping patience                              |
+| `--seed`             | int   | `42`                      | Random seed for reproducibility                      |
+| `--artifacts-dir`    | Path  | `artifacts`               | Directory for checkpoints and logs                   |
+| `--no-weighted-sampler` | flag | `False`                | Disable weighted random sampling for class imbalance |
+| `--experiment-name`  | str   | `plant_disease_classifier` | MLflow experiment name for tracking              |
+| `--run-name`         | str   | `None`                    | Optional MLflow run name for this training run      |
+
+### Example Usage
+
+```bash
+# Train with default settings
+python -m src.pipelines.model_training
+
+# Train with custom hyperparameters
+python -m src.pipelines.model_training \
+    --train-dir dataset/processed/train \
+    --val-dir dataset/processed/val \
+    --batch-size 64 \
+    --epochs 50 \
+    --freeze-epochs 10 \
+    --lr 1e-4 \
+    --weight-decay 5e-4 \
+    --artifacts-dir artifacts/experiment1
+```
+
+### Training Process
+
+The pipeline implements a two-phase fine-tuning strategy:
+
+1. **Warm-up phase** (epochs 0 to `freeze-epochs` - 1): Backbone frozen, only the
+   classification head trains
+2. **Full fine-tuning phase** (epochs `freeze-epochs` to `epochs` - 1): All parameters
+   unfrozen for end-to-end training
+
+### Model Checkpoints
+
+The training pipeline automatically saves two checkpoints to `artifacts/`:
+
+- **best_model.pt**: Model with the lowest validation loss (saved when performance improves)
+- **last_model.pt**: Model from the final epoch (saved regardless of performance)
+
+Each checkpoint contains:
+
+- `epoch`: Epoch index when saved
+- `val_loss`: Validation loss at that epoch
+- `model_state_dict`: Model weights
+- `optimizer_state_dict`: Optimizer state
+- `class_names`: List of class label names (for evaluation)
+
+### MLflow Experiment Tracking
+
+The training pipeline automatically logs all experiments to MLflow for tracking and comparison:
+
+**Logged Hyperparameters:**
+
+- epochs, freeze_epochs, lr, weight_decay, patience, seed, batch_size, num_classes
+
+**Logged Metrics (per epoch):**
+
+- train_loss, train_acc, val_loss, val_acc
+
+**Logged Summary Metrics:**
+
+- best_val_loss, best_val_acc
+
+**Logged Artifacts:**
+
+- best_model.pt: Best model checkpoint
+- history.json: Training history with per-epoch metrics
+
+**Viewing Experiments:**
+
+After training, start the MLflow UI to visualize experiments:
+
+```bash
+mlflow ui --port 5000
+```
+
+Then open `http://localhost:5000` in your browser to compare runs, view metrics,
+and download artifacts.
+
+## Model Evaluation
+
+Evaluate a trained model on the test split using the production-ready CLI pipeline:
+
+```bash
+python -m src.pipelines.model_evaluation
+```
+
+### Evaluation CLI Flags
+
+| Flag            | Type  | Default                    | Description                                    |
+|-----------------|-------|----------------------------|------------------------------------------------|
+| `--test-dir`    | Path  | `dataset/processed/test`   | Path to test data directory                    |
+| `--checkpoint`  | Path  | `artifacts/best_model.pt`  | Path to model checkpoint file                  |
+| `--batch-size`  | int   | `32`                       | Number of samples per batch                    |
+| `--artifacts-dir` | Path | `artifacts`               | Directory for saving evaluation artifacts      |
+| `--save-cm`     | flag  | `False`                    | Save confusion matrix as PNG                   |
+
+### Evaluation Examples
+
+```bash
+# Evaluate with default settings
+python -m src.pipelines.model_evaluation
+
+# Evaluate a specific checkpoint and save confusion matrix
+python -m src.pipelines.model_evaluation \
+    --test-dir dataset/processed/test \
+    --checkpoint artifacts/best_model.pt \
+    --batch-size 64 \
+    --save-cm \
+    --artifacts-dir artifacts/evaluation
+```
+
+### Evaluation Output
+
+The pipeline prints:
+
+- Checkpoint information (epoch, validation loss)
+- Evaluation configuration (device, classes, sample count)
+- Overall accuracy
+- Per-class precision, recall, and F1-score
+- Confusion matrix (if `--save-cm` is enabled)
+
+**Note**: The evaluation pipeline requires checkpoints saved with the updated
+`model_training.py` that includes `class_names` in the checkpoint. Old checkpoints
+will produce an error message instructing you to retrain.
+
 ## Entry Points
 
 Available project entry points:
@@ -261,6 +414,8 @@ Available project entry points:
 python main.py
 python -m src.pipelines.data_preprocessing
 python -m src.pipelines.data_splitting
+python -m src.pipelines.model_training
+python -m src.pipelines.model_evaluation
 python -m src.rag.ingest
 python -m src.vision.train
 python -m src.orchestrator.main
@@ -269,8 +424,8 @@ streamlit run app/streamlit.py
 ```
 
 The dataset preparation scripts (`data_preprocessing`, `data_splitting`) and
-model training/evaluation modules are implemented and runnable. API and UI
-entry points are still scaffolds.
+model training/evaluation pipelines (`model_training`, `model_evaluation`) are
+implemented and runnable. API and UI entry points are still scaffolds.
 
 ## Development Notes
 

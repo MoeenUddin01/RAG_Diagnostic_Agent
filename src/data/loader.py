@@ -14,7 +14,7 @@ def get_dataloaders(
     test_dir: str = "dataset/processed/test",
     batch_size: int = 32,
     use_weighted_sampler: bool = True,
-) -> tuple[DataLoader, DataLoader, DataLoader]:
+) -> tuple[DataLoader | None, DataLoader | None, DataLoader]:
     """Create DataLoaders for train, validation, and test datasets.
 
     Args:
@@ -28,7 +28,8 @@ def get_dataloaders(
             vs 600 for most classes). Defaults to True.
 
     Returns:
-        A tuple of (train_loader, val_loader, test_loader).
+        A tuple of (train_loader, val_loader, test_loader). Train and val
+        loaders may be None if their directories are not provided.
     """
     train_dataset, val_dataset, test_dataset = get_datasets(
         train_dir=train_dir,
@@ -36,44 +37,51 @@ def get_dataloaders(
         test_dir=test_dir,
     )
 
-    if use_weighted_sampler:
-        class_counts: dict[int, int] = {}
-        for label in train_dataset.targets:
-            class_counts[label] = class_counts.get(label, 0) + 1
+    train_loader = None
+    val_loader = None
 
-        class_weight: dict[int, float] = {
-            c: 1.0 / count for c, count in class_counts.items()
-        }
-        sample_weights = [class_weight[label] for label in train_dataset.targets]
-        weights_tensor = torch.DoubleTensor(sample_weights)
-        sampler = WeightedRandomSampler(
-            weights=weights_tensor,
-            num_samples=len(sample_weights),
-            replacement=True,
-        )
-        train_loader = DataLoader(
-            train_dataset,
+    if train_dataset is not None:
+        if use_weighted_sampler:
+            class_counts: dict[int, int] = {}
+            for label in train_dataset.targets:
+                class_counts[label] = class_counts.get(label, 0) + 1
+
+            class_weight: dict[int, float] = {
+                c: 1.0 / count for c, count in class_counts.items()
+            }
+            sample_weights = [class_weight[label] for label in train_dataset.targets]
+            weights_tensor = torch.DoubleTensor(sample_weights)
+            sampler = WeightedRandomSampler(
+                weights=weights_tensor,
+                num_samples=len(sample_weights),
+                replacement=True,
+            )
+            train_loader = DataLoader(
+                train_dataset,
+                batch_size=batch_size,
+                shuffle=False,
+                sampler=sampler,
+                num_workers=4,
+                pin_memory=True,
+            )
+        else:
+            train_loader = DataLoader(
+                train_dataset,
+                batch_size=batch_size,
+                shuffle=True,
+                num_workers=4,
+                pin_memory=True,
+            )
+
+    if val_dataset is not None:
+        val_loader = DataLoader(
+            val_dataset,
             batch_size=batch_size,
             shuffle=False,
-            sampler=sampler,
             num_workers=4,
             pin_memory=True,
         )
-    else:
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=batch_size,
-            shuffle=True,
-            num_workers=4,
-            pin_memory=True,
-        )
-    val_loader = DataLoader(
-        val_dataset,
-        batch_size=batch_size,
-        shuffle=False,
-        num_workers=4,
-        pin_memory=True,
-    )
+
     test_loader = DataLoader(
         test_dataset,
         batch_size=batch_size,
@@ -83,6 +91,34 @@ def get_dataloaders(
     )
 
     return train_loader, val_loader, test_loader
+
+
+def get_test_dataloader(
+    test_dir: str = "dataset/processed/test",
+    batch_size: int = 32,
+) -> DataLoader:
+    """Create a DataLoader for the test dataset only.
+
+    Args:
+        test_dir: Path to test data directory.
+        batch_size: Number of samples per batch.
+
+    Returns:
+        A DataLoader for the test split.
+    """
+    _, _, test_dataset = get_datasets(
+        train_dir="",
+        val_dir="",
+        test_dir=test_dir,
+    )
+    test_loader = DataLoader(
+        test_dataset,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=4,
+        pin_memory=True,
+    )
+    return test_loader
 
 
 if __name__ == "__main__":

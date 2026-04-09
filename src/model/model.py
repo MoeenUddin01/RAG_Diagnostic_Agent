@@ -76,6 +76,7 @@ def save_checkpoint(
     val_loss: float,
     artifacts_dir: Path = Path("artifacts"),
     filename: str = "checkpoint.pt",
+    class_names: list[str] | None = None,
 ) -> Path:
     """Persist model and optimiser state to disk.
 
@@ -86,6 +87,8 @@ def save_checkpoint(
         val_loss: Validation loss at this checkpoint.
         artifacts_dir: Directory where the file will be written.
         filename: Name of the ``.pt`` file.
+        class_names: Optional list of class label names to save with
+            the checkpoint for later evaluation.
 
     Returns:
         The full :class:`~pathlib.Path` of the saved checkpoint file.
@@ -96,15 +99,15 @@ def save_checkpoint(
     """
     artifacts_dir.mkdir(parents=True, exist_ok=True)
     checkpoint_path = artifacts_dir / filename
-    torch.save(
-        {
-            "epoch": epoch,
-            "val_loss": val_loss,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-        },
-        checkpoint_path,
-    )
+    checkpoint_dict: dict = {
+        "epoch": epoch,
+        "val_loss": val_loss,
+        "model_state_dict": model.state_dict(),
+        "optimizer_state_dict": optimizer.state_dict(),
+    }
+    if class_names is not None:
+        checkpoint_dict["class_names"] = class_names
+    torch.save(checkpoint_dict, checkpoint_path)
     return checkpoint_path
 
 
@@ -135,7 +138,9 @@ def load_checkpoint(
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
 
     checkpoint: dict = torch.load(checkpoint_path, map_location=device)
-    model = build_model(num_classes=num_classes, pretrained=False, freeze_backbone=False)
+    model = build_model(
+        num_classes=num_classes, pretrained=False, freeze_backbone=False
+    )
     model.load_state_dict(checkpoint["model_state_dict"])
     model.to(device)
     return model, checkpoint

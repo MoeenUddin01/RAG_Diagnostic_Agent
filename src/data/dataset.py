@@ -12,26 +12,34 @@ from src.data.transforms import (
 
 
 def get_datasets(
-    train_dir: str = "dataset/processed/train",
-    val_dir: str = "dataset/processed/val",
+    train_dir: str | None = "dataset/processed/train",
+    val_dir: str | None = "dataset/processed/val",
     test_dir: str = "dataset/processed/test",
-) -> tuple[ImageFolder, ImageFolder, ImageFolder]:
+) -> tuple[ImageFolder | None, ImageFolder | None, ImageFolder]:
     """Create ImageFolder datasets for train, validation, and test splits.
 
     Args:
-        train_dir: Path to training data directory.
-        val_dir: Path to validation data directory.
+        train_dir: Path to training data directory. If None or empty string,
+            train_dataset will be None.
+        val_dir: Path to validation data directory. If None or empty string,
+            val_dataset will be None.
         test_dir: Path to test data directory.
 
     Returns:
-        A tuple of (train_dataset, val_dataset, test_dataset).
+        A tuple of (train_dataset, val_dataset, test_dataset). Train and val
+        datasets may be None if their directories are not provided.
     """
     train_transform = get_train_transform()
     val_transform = get_val_transform()
     test_transform = get_test_transform()
 
-    train_dataset = ImageFolder(root=train_dir, transform=train_transform)
-    val_dataset = ImageFolder(root=val_dir, transform=val_transform)
+    train_dataset = None
+    val_dataset = None
+
+    if train_dir:
+        train_dataset = ImageFolder(root=train_dir, transform=train_transform)
+    if val_dir:
+        val_dataset = ImageFolder(root=val_dir, transform=val_transform)
     test_dataset = ImageFolder(root=test_dir, transform=test_transform)
 
     return train_dataset, val_dataset, test_dataset
