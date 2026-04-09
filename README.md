@@ -7,13 +7,14 @@ from a curated knowledge base.
 
 ## Current State
 
-This repository is an early scaffold, not a finished application.
+This repository is a work in progress. The following components are implemented:
 
-- The package structure is in place for training, inference, orchestration,
-  FastAPI serving, and a Streamlit UI.
-- Dataset preprocessing utilities and runnable data pipeline scripts are now
-  implemented.
-- Vision, RAG, API, and UI modules are still mostly scaffolds.
+- **Data pipeline**: Dataset balancing, splitting, loading with `WeightedRandomSampler`
+- **Model training**: EfficientNet-B2 training loop with two-phase fine-tuning
+  (frozen backbone warm-up + full fine-tuning), checkpointing
+- **Model evaluation**: Accuracy, classification report, confusion matrix
+- **API/UI**: Scaffolds only (not yet functional)
+- **RAG**: Not yet implemented
 
 If you are contributing to this repo, treat it as a clean foundation for
 building the full pipeline rather than a runnable end-to-end product today.
@@ -213,6 +214,7 @@ train_loader, val_loader, test_loader = get_dataloaders(
     val_dir="dataset/processed/val",
     test_dir="dataset/processed/test",
     batch_size=32,
+    use_weighted_sampler=True,  # Handles class imbalance
 )
 
 # Option 2: Get datasets only (for custom DataLoader setup)
@@ -233,7 +235,10 @@ The data loading pipeline applies these transforms:
 
 DataLoaders configuration:
 
-- **Train**: `shuffle=True` (for parameter updates), `num_workers=4`, `pin_memory=True`
+- **Train**: `WeightedRandomSampler` with inverse-frequency weights to handle class
+  imbalance (e.g., `Potato___healthy` has only 91 samples vs 600 for most classes),
+  `num_workers=4`, `pin_memory=True`. Set `use_weighted_sampler=False` for standard
+  shuffling.
 - **Val/Test**: `shuffle=False` (for consistent evaluation)
 
 ## Data Module Summary
@@ -242,7 +247,8 @@ DataLoaders configuration:
 |-----------------|----------------------------------------|----------------------------------------------------------------------------|
 | `transforms.py` | Image preprocessing pipelines          | `get_train_transform()`, `get_val_transform()`, `get_test_transform()`     |
 | `dataset.py`    | Create PyTorch datasets from split folders | `get_datasets()` returns `ImageFolder` objects                             |
-| `loader.py`     | Batch and iterate datasets for training | `get_dataloaders()` returns `DataLoader` objects                           |
+| `loader.py`     | Batch and iterate datasets for training  | `get_dataloaders()` returns `DataLoader` objects                         |
+|                 |                                        | with optional `WeightedRandomSampler` for class imbalance                |
 
 **Import chain:** `transforms.py` → `dataset.py` → `loader.py`
 
@@ -261,8 +267,9 @@ uvicorn app.main:app --reload
 streamlit run app/streamlit.py
 ```
 
-Currently, the dataset preparation scripts are implemented and runnable. Most
-other application entry points are still placeholders.
+The dataset preparation scripts (`data_preprocessing`, `data_splitting`) and
+model training/evaluation modules are implemented and runnable. API and UI
+entry points are still scaffolds.
 
 ## Development Notes
 
@@ -275,7 +282,7 @@ other application entry points are still placeholders.
 
 ## Suggested Next Steps
 
-- Build the training and evaluation loop in `src/model/`.
+- Implement inference script in `src/model/prediction.py`.
 - Add PDF or document ingestion in `src/rag/ingest.py`.
 - Expose inference through `app/main.py` and `app/predict.py`.
 - Connect prediction and retrieval in `src/orchestrator/main.py`.
