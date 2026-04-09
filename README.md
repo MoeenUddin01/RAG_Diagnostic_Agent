@@ -165,6 +165,27 @@ Current image counts:
 - `val`: 4040
 - `test`: 1351
 
+**Class-wise distribution:**
+
+| Class | Train | Val | Test |
+|-------|-------|-----|------|
+| Pepper__bell___Bacterial_spot | 598 | 299 | 100 |
+| Pepper__bell___healthy | 600 | 300 | 100 |
+| Potato___Early_blight | 600 | 300 | 100 |
+| Potato___Late_blight | 600 | 300 | 100 |
+| Potato___healthy | 91 | 45 | 16 |
+| Tomato_Bacterial_spot | 600 | 300 | 100 |
+| Tomato_Early_blight | 600 | 300 | 100 |
+| Tomato_Late_blight | 600 | 300 | 100 |
+| Tomato_Leaf_Mold | 571 | 285 | 96 |
+| Tomato_Septoria_leaf_spot | 600 | 300 | 100 |
+| Tomato_Spider_mites_Two_spotted_spider_mite | 600 | 300 | 100 |
+| Tomato__Target_Spot | 600 | 300 | 100 |
+| Tomato__Tomato_YellowLeaf__Curl_Virus | 600 | 300 | 100 |
+| Tomato__Tomato_mosaic_virus | 223 | 111 | 39 |
+| Tomato_healthy | 600 | 300 | 100 |
+| **TOTAL** | **8083** | **4040** | **1351** |
+
 The raw dataset remains unchanged. The processed dataset is organized in the
 standard image-classification layout:
 
