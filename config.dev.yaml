@@ -1,4 +1,4 @@
-# RAG Diagnostic Agent — central configuration
+# Dev config — smoke test only. 1 epoch to verify pipeline runs end-to-end.
 
 dataset:
   train_dir: dataset/processed/train
@@ -16,20 +16,21 @@ model:
   classifier_in_features: 1408
 
 training:
-  epochs: 30
-  batch_size: 32
-  freeze_epochs: 5
+  epochs: 1
+  batch_size: 16
+  freeze_epochs: 0
   lr: 0.0003
   weight_decay: 0.0001
-  patience: 5
+  patience: 1
   seed: 42
+  max_batches: 20
 
 artifacts:
-  dir: artifacts
-  best_model: artifacts/best_model.pt
-  last_model: artifacts/last_model.pt
-  history: artifacts/history.json
-  confusion_matrix: artifacts/confusion_matrix.png
+  dir: artifacts/dev
+  best_model: artifacts/dev/best_model.pt
+  last_model: artifacts/dev/last_model.pt
+  history: artifacts/dev/history.json
+  confusion_matrix: artifacts/dev/confusion_matrix.png
 
 rag:
   knowledge_base_dir: knowledge_base
@@ -39,9 +40,9 @@ rag:
   confidence_threshold: 0.65
 
 mlflow:
-  experiment_name: plant_disease_classifier
+  experiment_name: plant_disease_classifier_dev
   tracking_uri: mlruns
-  run_name: null
+  run_name: smoke-test
 
 classes:
   - Pepper__bell___Bacterial_spot

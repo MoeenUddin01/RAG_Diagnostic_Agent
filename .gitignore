@@ -209,3 +209,5 @@ __marimo__/
 # Dataset
 dataset/
 artifacts/
+#env
+.env/

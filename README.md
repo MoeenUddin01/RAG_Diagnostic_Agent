@@ -12,12 +12,14 @@ This repository is a work in progress. The following components are implemented:
 - **Data pipeline**: Dataset balancing, splitting, loading with `WeightedRandomSampler`
 - **Model training**: Production-ready CLI pipeline with EfficientNet-B2 two-phase
   fine-tuning (frozen backbone warm-up + full fine-tuning), checkpointing,
-  automatic model saving, and MLflow experiment tracking
+  automatic model saving, progress bars with tqdm, and MLflow/DagsHub experiment tracking
 - **Model evaluation**: Production-ready CLI pipeline with accuracy metrics,
   classification report, confusion matrix, and checkpoint loading
-- **Experiment tracking**: MLflow integration for hyperparameter, metric, and artifact
-  logging with visual experiment comparison
-- **Utilities**: Device selection (CUDA/MPS/CPU), project root, artifacts directory helpers
+- **Experiment tracking**: MLflow integration with DagsHub for hyperparameter, metric, and artifact
+  logging with visual experiment comparison and remote tracking
+- **Utilities**: Device selection with CUDA compatibility checking (auto-fallback to CPU for incompatible GPUs),
+  project root, artifacts directory helpers
+- **Quick testing**: `max_batches` parameter in config.dev.yaml for fast smoke testing
 - **API/UI**: Scaffolds only (not yet functional)
 - **RAG**: Not yet implemented
 
@@ -47,6 +49,9 @@ Those parts are expected to be connected by the orchestration layer in
 - Pydantic
 - Pandas
 - MLflow
+- DagsHub
+- tqdm
+- python-dotenv
 
 ## Repository Layout
 
@@ -100,6 +105,18 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e .
 ```
+
+### Environment Variables
+
+For MLflow/DagsHub experiment tracking, create a `.env` file in the project root:
+
+```bash
+MLFLOW_TRACKING_URI=https://dagshub.com/<username>/<repo>.mlflow
+MLFLOW_TRACKING_USERNAME=<your-dagshub-username>
+MLFLOW_TRACKING_PASSWORD=<your-dagshub-token>
+```
+
+The `.env` file is automatically loaded by `run.py` before MLflow initializes.
 
 ## Local Development
 
@@ -258,6 +275,54 @@ DataLoaders configuration:
 
 **Import chain:** `transforms.py` → `dataset.py` → `loader.py`
 
+## Configuration
+
+The project uses YAML configuration files for centralized settings management:
+
+### config.yaml
+
+Production configuration with default hyperparameters:
+
+- **dataset**: Data paths, image size, class count, weighted sampler setting
+- **model**: Architecture (EfficientNet-B2), pretrained weights, freeze epochs, classifier config
+- **training**: Hyperparameters (30 epochs, batch size 32, learning rate, weight decay, patience)
+- **artifacts**: Paths for checkpoints, history, and confusion matrix
+- **rag**: Knowledge base and embedding model settings (for future RAG implementation)
+- **mlflow**: Experiment tracking configuration
+- **classes**: List of all 15 PlantVillage class names
+
+### config.dev.yaml
+
+Development configuration for fast smoke testing:
+
+- **training**: 1 epoch, batch size 16, freeze_epochs=0, patience=1, max_batches=20 (limits total batches for quick testing)
+- **artifacts**: Separate `artifacts/dev/` directory to avoid overwriting production artifacts
+- **mlflow**: Uses `plant_disease_classifier_dev` experiment with `smoke-test` run name
+
+Use `config.dev.yaml` to quickly verify the pipeline runs end-to-end without waiting for full training. The `max_batches` parameter limits the total number of batches processed across all epochs for rapid smoke testing.
+
+### Running from Config
+
+The project includes a `run.py` script that loads configuration from YAML files:
+
+```bash
+# Run with production config
+python run.py config.yaml
+
+# Run with dev/smoke-test config
+python run.py config.dev.yaml
+```
+
+The `run.py` script automatically:
+
+- Loads the specified YAML configuration
+- Validates data directories exist
+- Creates artifacts directory if needed
+- Loads datasets with configured settings
+- Trains the model with hyperparameters from config
+- Logs all metrics to MLflow with experiment/run names from config
+- Evaluates on validation set and prints results
+
 ## Model Training
 
 Train the EfficientNet-B2 model on the prepared dataset using the production-ready
@@ -312,6 +377,10 @@ The pipeline implements a two-phase fine-tuning strategy:
 2. **Full fine-tuning phase** (epochs `freeze-epochs` to `epochs` - 1): All parameters
    unfrozen for end-to-end training
 
+**Progress Tracking:**
+
+Training includes real-time progress bars (using tqdm) that show batch-level progress for both training and validation phases, displaying percentage complete and estimated time remaining.
+
 ### Model Checkpoints
 
 The training pipeline automatically saves two checkpoints to `artifacts/`:
@@ -329,7 +398,7 @@ Each checkpoint contains:
 
 ### MLflow Experiment Tracking
 
-The training pipeline automatically logs all experiments to MLflow for tracking and comparison:
+The training pipeline automatically logs all experiments to MLflow with DagsHub integration for remote tracking:
 
 **Logged Hyperparameters:**
 
@@ -348,16 +417,19 @@ The training pipeline automatically logs all experiments to MLflow for tracking 
 - best_model.pt: Best model checkpoint
 - history.json: Training history with per-epoch metrics
 
+**DagsHub Integration:**
+
+The training pipeline automatically initializes DagsHub tracking before MLflow experiment setup. Ensure your `.env` file contains the required DagsHub credentials (see Installation section). This enables remote experiment tracking and visualization on DagsHub.
+
 **Viewing Experiments:**
 
-After training, start the MLflow UI to visualize experiments:
+After training, start the MLflow UI to visualize experiments locally:
 
 ```bash
 mlflow ui --port 5000
 ```
 
-Then open `http://localhost:5000` in your browser to compare runs, view metrics,
-and download artifacts.
+Then open `http://localhost:5000` in your browser to compare runs, view metrics, and download artifacts. For remote viewing, check your DagsHub repository's Experiments tab.
 
 ## Model Evaluation
 
@@ -435,6 +507,7 @@ implemented and runnable. API and UI entry points are still scaffolds.
 - Follow PEP 8 and prefer fully typed function signatures.
 - Use concise module boundaries so training, serving, and orchestration remain
   separate.
+- The `get_device()` utility automatically detects GPU compatibility and falls back to CPU if the GPU's compute capability is incompatible with the installed PyTorch version. This prevents runtime errors on older GPUs.
 
 ## Suggested Next Steps
 

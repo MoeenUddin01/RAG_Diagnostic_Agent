@@ -19,7 +19,17 @@ def get_device() -> torch.device:
         A :class:`torch.device` instance.
     """
     if torch.cuda.is_available():
-        return torch.device("cuda")
+        try:
+            # Test CUDA compatibility with a simple operation
+            test_tensor = torch.tensor([1.0]).cuda()
+            _ = test_tensor + 1
+            return torch.device("cuda")
+        except RuntimeError:
+            # CUDA available but incompatible (e.g., old compute capability)
+            print(
+                "Warning: CUDA device detected but incompatible with PyTorch. "
+                "Falling back to CPU."
+            )
     if torch.backends.mps.is_available():
         return torch.device("mps")
     return torch.device("cpu")

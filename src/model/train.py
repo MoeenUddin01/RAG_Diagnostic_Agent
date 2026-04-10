@@ -15,12 +15,14 @@ import time
 from pathlib import Path
 from typing import Optional
 
+import dagshub
 import mlflow
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 from src.model.model import build_model, save_checkpoint, unfreeze_backbone
 from src.utils import get_device
@@ -33,6 +35,7 @@ def _run_epoch(
     optimizer: Optional[torch.optim.Optimizer],
     device: torch.device,
     is_train: bool,
+    max_batches: Optional[int] = None,
 ) -> tuple[float, float]:
     """Execute one epoch of training or validation.
 
@@ -43,18 +46,23 @@ def _run_epoch(
         optimizer: Optimiser instance; ignored when ``is_train=False``.
         device: Device for tensor placement.
         is_train: When ``True`` gradients are computed and weights updated.
+        max_batches: Optional limit on number of batches to process.
 
     Returns:
-        A two-tuple ``(avg_loss, accuracy)`` over the full epoch.
+        A two-tuple ``(avg_loss, accuracy)`` over the processed batches.
     """
     model.train() if is_train else model.eval()
     total_loss = 0.0
     correct = 0
     total = 0
 
+    phase = "Train" if is_train else "Val"
     context = torch.enable_grad() if is_train else torch.no_grad()
     with context:
-        for images, labels in loader:
+        for batch_idx, (images, labels) in enumerate(tqdm(loader, desc=phase, unit="batch")):
+            if max_batches is not None and batch_idx >= max_batches:
+                break
+
             images = images.to(device, non_blocking=True)
             labels = labels.to(device, non_blocking=True)
 
@@ -90,6 +98,7 @@ def train(
     artifacts_dir: Path = Path("artifacts"),
     experiment_name: str = "plant_disease_classifier",
     run_name: str | None = None,
+    max_batches: Optional[int] = None,
 ) -> nn.Module:
     """Train EfficientNet-B2 on the plant disease dataset.
 
@@ -118,6 +127,7 @@ def train(
         artifacts_dir: Directory where checkpoints are written.
         experiment_name: MLflow experiment name for tracking.
         run_name: Optional MLflow run name for this training run.
+        max_batches: Optional limit on batches per epoch for quick testing.
 
     Returns:
         The trained ``nn.Module`` with the best validation-loss weights loaded.
@@ -129,6 +139,8 @@ def train(
         raise ValueError(
             f"freeze_epochs ({freeze_epochs}) must be less than epochs ({epochs})."
         )
+
+    dagshub.init(repo_owner="MoeenUddin01", repo_name="RAG_Diagnostic_Agent", mlflow=True)
 
     mlflow.set_experiment(experiment_name)
 
@@ -189,10 +201,10 @@ def train(
                 )
 
             train_loss, train_acc = _run_epoch(
-                model, train_loader, criterion, optimizer, device, is_train=True
+                model, train_loader, criterion, optimizer, device, is_train=True, max_batches=max_batches
             )
             val_loss, val_acc = _run_epoch(
-                model, val_loader, criterion, None, device, is_train=False
+                model, val_loader, criterion, None, device, is_train=False, max_batches=max_batches
             )
             scheduler.step()
 
