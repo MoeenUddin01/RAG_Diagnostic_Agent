@@ -15,15 +15,17 @@ This repository is a work in progress. The following components are implemented:
   automatic model saving, progress bars with tqdm, and MLflow/DagsHub experiment tracking
 - **Model evaluation**: Production-ready CLI pipeline with accuracy metrics,
   classification report, confusion matrix, and checkpoint loading
+- **Model inference**: Prediction utilities for single and batch image inference
 - **Experiment tracking**: MLflow integration with DagsHub for hyperparameter, metric, and artifact
   logging with visual experiment comparison and remote tracking
 - **Utilities**: Device selection with CUDA compatibility checking (auto-fallback to CPU for incompatible GPUs),
   project root, artifacts directory helpers
 - **Quick testing**: `max_batches` parameter in config.dev.yaml for fast smoke testing
-- **API/UI**: Scaffolds only (not yet functional)
+- **FastAPI API**: RESTful API with health check and prediction endpoints
+- **Streamlit UI**: Interactive web interface for image upload and classification
 - **RAG**: Not yet implemented
 
-The training and evaluation pipelines are fully functional and can be run via
+The training, evaluation, and API/UI pipelines are fully functional and can be run via
 command-line interfaces with full MLflow experiment tracking.
 
 ## Planned Architecture
@@ -57,25 +59,26 @@ Those parts are expected to be connected by the orchestration layer in
 
 ```text
 app/
-  main.py              FastAPI entry point scaffold
-  dependencies.py      Shared FastAPI dependencies scaffold
-  middleware.py        Middleware scaffold
-  model_loader.py      Serving-time model loading scaffold
-  predict.py           API prediction scaffold
-  schemas.py           API schema scaffold
-  routers/             API router package
-  schemas/             Schema package
-  templates/           HTML templates
-  streamlit.py         Streamlit UI scaffold
+  main.py              FastAPI application factory with CORS and middleware
+  dependencies.py      Shared dependency injection (model, config, device)
+  middleware.py        Exception handlers and middleware configuration
+  routers/             API route handlers
+    health.py          Health check endpoint
+    prediction.py      Prediction endpoint for image classification
+  schemas/             Pydantic request/response models
+    request.py         Prediction request schema
+    response.py        Prediction and health response schemas
+  streamlit.py         Interactive Streamlit UI for image classification
+  templates/           HTML templates (for future web interface)
 
 src/
   data/                Dataset balancing, splitting, loading, and label encoding
-  model/               Model loading, training, evaluation, prediction scaffolds
+  model/               Model loading, training, evaluation, and prediction
+    model.py           EfficientNet-B2 model building and checkpoint management
+    prediction.py      Inference utilities for single and batch predictions
   pipelines/           Runnable dataset preparation and ML pipeline entry points
-  rag/                 Retrieval ingestion scaffold
-  vision/              Vision training scaffold
-  orchestrator/        Vision + RAG orchestration scaffold
-  utils.py             Shared utilities module
+  orchestrator/        Vision + RAG orchestration (for future implementation)
+  utils.py             Shared utilities (device selection, path helpers)
 
 dataset/
   raw/                 Raw image dataset directory
@@ -87,6 +90,7 @@ dataset/
     test/              Test split
 
 artifacts/             Saved models and generated outputs
+  modelpt/             Trained model checkpoint (best_model.pt)
 notebook/              Exploratory notebooks
 ```
 
@@ -478,6 +482,97 @@ The pipeline prints:
 `model_training.py` that includes `class_names` in the checkpoint. Old checkpoints
 will produce an error message instructing you to retrain.
 
+## FastAPI API
+
+The project includes a production-ready FastAPI REST API for model inference.
+
+### Running the API
+
+Start the FastAPI server:
+
+```bash
+uv run uvicorn app.main:app --reload --port 8000
+```
+
+The API will be available at `http://localhost:8000`.
+
+### API Endpoints
+
+#### Health Check
+
+Check if the API and model are running:
+
+```bash
+curl http://localhost:8000/v1/health/
+```
+
+Response:
+
+```json
+{
+  "status": "healthy",
+  "model_loaded": true,
+  "device": "cpu"
+}
+```
+
+#### Prediction
+
+Predict plant disease from a base64-encoded image:
+
+```bash
+curl -X POST http://localhost:8000/v1/prediction/ \
+  -H "Content-Type: application/json" \
+  -d '{
+    "image_base64": "<base64-encoded-image-string>"
+  }'
+```
+
+Response:
+
+```json
+{
+  "predicted_class": "Tomato_healthy",
+  "confidence": 0.95,
+  "class_probabilities": {
+    "Pepper__bell___Bacterial_spot": 0.01,
+    "Pepper__bell___healthy": 0.02,
+    "Tomato_healthy": 0.95,
+    ...
+  }
+}
+```
+
+### API Documentation
+
+Interactive API documentation is available at:
+
+- Swagger UI: `http://localhost:8000/docs`
+- ReDoc: `http://localhost:8000/redoc`
+
+## Streamlit UI
+
+The project includes an interactive Streamlit web interface for easy image classification.
+
+### Running the Streamlit App
+
+Start the Streamlit app:
+
+```bash
+uv run streamlit run app/streamlit.py
+```
+
+The UI will be available at `http://localhost:8501`.
+
+### Features
+
+- Upload images (JPG, PNG)
+- Real-time prediction display
+- Confidence score visualization
+- Full class probability distribution
+- Top 5 predictions bar chart
+- Support for Pepper, Potato, and Tomato plants
+
 ## Entry Points
 
 Available project entry points:
@@ -489,16 +584,13 @@ python -m src.pipelines.data_preprocessing
 python -m src.pipelines.data_splitting
 python -m src.pipelines.model_training # Alternative: CLI-based training
 python -m src.pipelines.model_evaluation
-python -m src.rag.ingest
-python -m src.vision.train
-python -m src.orchestrator.main
-uvicorn app.main:app --reload
-streamlit run app/streamlit.py
+uv run uvicorn app.main:app --reload   # FastAPI server
+uv run streamlit run app/streamlit.py  # Streamlit UI
 ```
 
-The dataset preparation scripts (`data_preprocessing`, `data_splitting`) and
-model training/evaluation pipelines (`model_training`, `model_evaluation`) are
-implemented and runnable. API and UI entry points are still scaffolds.
+The dataset preparation scripts (`data_preprocessing`, `data_splitting`), model
+training/evaluation pipelines (`model_training`, `model_evaluation`), and API/UI
+are fully implemented and runnable.
 
 ## Development Notes
 
@@ -512,10 +604,9 @@ implemented and runnable. API and UI entry points are still scaffolds.
 
 ## Suggested Next Steps
 
-- Implement inference script in `src/model/prediction.py`.
 - Add PDF or document ingestion in `src/rag/ingest.py`.
-- Expose inference through `app/main.py` and `app/predict.py`.
 - Connect prediction and retrieval in `src/orchestrator/main.py`.
+- Implement RAG layer to retrieve treatment guidance from knowledge base.
 
 ## Project Metadata
 
