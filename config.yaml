@@ -16,7 +16,7 @@ model:
   classifier_in_features: 1408
 
 training:
-  epochs: 30
+  epochs: 50
   batch_size: 32
   freeze_epochs: 5
   lr: 0.0003

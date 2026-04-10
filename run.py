@@ -6,11 +6,11 @@ Usage:
     python run.py config.dev.yaml      # Run training with dev/smoke-test config
 """
 
+from __future__ import annotations
+
 from dotenv import load_dotenv
 
 load_dotenv()
-
-from __future__ import annotations
 
 import argparse
 import sys

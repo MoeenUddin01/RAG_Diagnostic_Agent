@@ -483,10 +483,11 @@ will produce an error message instructing you to retrain.
 Available project entry points:
 
 ```bash
-python main.py
+python run.py config.yaml              # Primary: train with config (production)
+python run.py config.dev.yaml          # Primary: train with config (dev/smoke-test)
 python -m src.pipelines.data_preprocessing
 python -m src.pipelines.data_splitting
-python -m src.pipelines.model_training
+python -m src.pipelines.model_training # Alternative: CLI-based training
 python -m src.pipelines.model_evaluation
 python -m src.rag.ingest
 python -m src.vision.train
