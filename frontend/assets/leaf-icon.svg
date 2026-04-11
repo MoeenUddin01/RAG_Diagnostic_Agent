@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="none">
+  <defs>
+    <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2d6a4f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#52b788;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="veinGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#40916c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#74c69d;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main leaf shape -->
+  <path d="M100 20 
+           C 60 20, 30 50, 30 90 
+           C 30 130, 50 160, 100 180 
+           C 150 160, 170 130, 170 90 
+           C 170 50, 140 20, 100 20Z" 
+        fill="url(#leafGradient)" 
+        opacity="0.9"/>
+  
+  <!-- Center vein -->
+  <path d="M100 25 
+           Q 100 100, 100 175" 
+        stroke="url(#veinGradient)" 
+        stroke-width="3" 
+        stroke-linecap="round"/>
+  
+  <!-- Left veins -->
+  <path d="M100 50 Q 70 60, 50 80" 
+        stroke="url(#veinGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round"
+        opacity="0.7"/>
+  <path d="M100 75 Q 65 85, 45 105" 
+        stroke="url(#veinGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round"
+        opacity="0.7"/>
+  <path d="M100 100 Q 60 110, 40 130" 
+        stroke="url(#veinGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round"
+        opacity="0.7"/>
+  <path d="M100 125 Q 65 135, 50 150" 
+        stroke="url(#veinGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round"
+        opacity="0.7"/>
+  
+  <!-- Right veins -->
+  <path d="M100 50 Q 130 60, 150 80" 
+        stroke="url(#veinGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round"
+        opacity="0.7"/>
+  <path d="M100 75 Q 135 85, 155 105" 
+        stroke="url(#veinGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round"
+        opacity="0.7"/>
+  <path d="M100 100 Q 140 110, 160 130" 
+        stroke="url(#veinGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round"
+        opacity="0.7"/>
+  <path d="M100 125 Q 135 135, 150 150" 
+        stroke="url(#veinGradient)" 
+        stroke-width="2" 
+        stroke-linecap="round"
+        opacity="0.7"/>
+  
+  <!-- Stem -->
+  <path d="M100 175 Q 100 185, 100 195" 
+        stroke="url(#leafGradient)" 
+        stroke-width="4" 
+        stroke-linecap="round"/>
+</svg>
