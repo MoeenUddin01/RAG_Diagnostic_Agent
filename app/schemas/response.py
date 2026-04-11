@@ -14,6 +14,7 @@ class PredictionResponse(BaseModel):
         predicted_class: The predicted disease/healthy class label.
         confidence: Model confidence score (0-1).
         class_probabilities: Dictionary mapping class names to probabilities.
+        treatment_recommendations: AI-generated treatment report from RAG + LLM.
     """
 
     predicted_class: str = Field(
@@ -29,6 +30,10 @@ class PredictionResponse(BaseModel):
     class_probabilities: dict[str, float] = Field(
         ...,
         description="Dictionary mapping class names to their probabilities.",
+    )
+    treatment_recommendations: str | None = Field(
+        default=None,
+        description="AI-generated treatment report from RAG + LLM (None if RAG unavailable).",
     )
 
 

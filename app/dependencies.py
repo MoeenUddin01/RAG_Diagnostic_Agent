@@ -3,15 +3,21 @@
 from __future__ import annotations
 
 from functools import lru_cache
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 import torch
 import yaml
 from fastapi import Depends
-from pathlib import Path
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
 
 from src.model.model import load_checkpoint
 from src.model.prediction import INFERENCE_TRANSFORMS
-from src.utils import get_device
+from src.utils import get_device, VECTOR_DB_PATH
+
+if TYPE_CHECKING:
+    from langchain_community.vectorstores import Chroma as ChromaType
 
 MODEL_PATH = Path("artifacts/modelpt/best_model.pt")
 CONFIG_PATH = Path("config.yaml")
@@ -80,3 +86,33 @@ def get_transforms():
         torchvision transforms composition for inference.
     """
     return INFERENCE_TRANSFORMS
+
+
+@lru_cache(maxsize=1)
+def get_vector_store() -> "ChromaType":
+    """Load and cache the ChromaDB vector store for RAG retrieval.
+
+    The vector store is loaded once at startup and reused for all requests.
+
+    Returns:
+        Chroma vector store instance with agricultural knowledge base.
+
+    Raises:
+        ValueError: If vector store is not initialized (run `python -m src.rag.ingest`).
+    """
+    embeddings = HuggingFaceEmbeddings(
+        model_name="all-MiniLM-L6-v2",
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
+    )
+
+    if not VECTOR_DB_PATH.exists():
+        raise ValueError(
+            f"Vector store not found at {VECTOR_DB_PATH}. "
+            "Please run: python -m src.rag.ingest"
+        )
+
+    return Chroma(
+        persist_directory=str(VECTOR_DB_PATH),
+        embedding_function=embeddings,
+    )

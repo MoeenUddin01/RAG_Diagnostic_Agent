@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
+from datetime import datetime, timezone
 
 from pathlib import Path
 
@@ -119,6 +121,31 @@ def main() -> None:
     )
     print_evaluation(results, split_name="test")
 
+    # Save evaluation results to JSON
+    args.artifacts_dir.mkdir(parents=True, exist_ok=True)
+    eval_results_path = args.artifacts_dir / "evaluation_results.json"
+
+    # Prepare serializable results
+    eval_results = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "checkpoint_path": str(args.checkpoint),
+        "checkpoint_epoch": epoch,
+        "checkpoint_val_loss": val_loss,
+        "test_dir": str(args.test_dir),
+        "num_classes": len(class_names),
+        "class_names": class_names,
+        "test_samples": len(test_loader.dataset),
+        "device": str(device),
+        "accuracy": results["accuracy"],
+        "accuracy_percent": round(results["accuracy"] * 100, 2),
+        "classification_report": results["report"],
+        "confusion_matrix": results["confusion_matrix"],
+    }
+
+    with open(eval_results_path, "w") as f:
+        json.dump(eval_results, f, indent=2)
+    print(f"\nEvaluation results saved to: {eval_results_path}")
+
     # Save confusion matrix if requested
     if args.save_cm:
         cm_path = save_confusion_matrix(
@@ -128,7 +155,7 @@ def main() -> None:
             filename="confusion_matrix_test.png",
         )
         if cm_path is not None:
-            print(f"\nConfusion matrix saved to: {cm_path}")
+            print(f"Confusion matrix saved to: {cm_path}")
 
 
 if __name__ == "__main__":
