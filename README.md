@@ -24,7 +24,8 @@ This repository is a work in progress. The following components are implemented:
 - **FastAPI API**: RESTful API with health check and prediction endpoints
 - **Streamlit UI**: Interactive web interface for image upload and classification
 - **Frontend**: Production-ready vanilla HTML/CSS/JS web interface with drag-and-drop upload
-- **RAG**: Not yet implemented
+- **RAG Knowledge Base**: PDF ingestion pipeline with ChromaDB vector store, recursive character splitting (700/150), and all-MiniLM-L6-v2 embeddings
+- **Groq LLM Integration**: AI-powered diagnostic reports using Groq's Llama-3 models (70B for reasoning, 8B for speed) with treatment recommendations
 
 The training, evaluation, and API/UI pipelines are fully functional and can be run via
 command-line interfaces with full MLflow experiment tracking.
@@ -87,8 +88,11 @@ src/
     model.py           EfficientNet-B2 model building and checkpoint management
     prediction.py      Inference utilities for single and batch predictions
   pipelines/           Runnable dataset preparation and ML pipeline entry points
-  orchestrator/        Vision + RAG orchestration (for future implementation)
-  utils.py             Shared utilities (device selection, path helpers)
+  rag/                 Retrieval-Augmented Generation components
+    ingest.py          PDF ingestion with ChromaDB vectorization
+  orchestrator/        Vision + RAG orchestration
+    main.py            Groq LLM integration and diagnostic report generation
+  utils.py             Shared utilities (device selection, path helpers, RAG paths, API key loading)
 
 dataset/
   raw/                 Raw image dataset directory
@@ -658,6 +662,8 @@ python -m src.pipelines.data_preprocessing
 python -m src.pipelines.data_splitting
 python -m src.pipelines.model_training # Alternative: CLI-based training
 python -m src.pipelines.model_evaluation
+python -m src.rag.ingest                 # Build knowledge base from PDFs
+python -m src.orchestrator.main          # Test Groq LLM diagnostic generation
 uv run uvicorn app.main:app --reload   # FastAPI server
 uv run streamlit run app/streamlit.py  # Streamlit UI
 python3 -m http.server 3000 --directory frontend  # Frontend server
@@ -678,11 +684,156 @@ training/evaluation pipelines (`model_training`, `model_evaluation`), API/UI
   separate.
 - The `get_device()` utility automatically detects GPU compatibility and falls back to CPU if the GPU's compute capability is incompatible with the installed PyTorch version. This prevents runtime errors on older GPUs.
 
+## Knowledge Base Ingestion (RAG)
+
+The project includes a PDF ingestion pipeline for building a searchable knowledge base from agricultural treatment manuals.
+
+### Running Ingestion
+
+Process all PDFs in `dataset/raw/manuals/` and create a persistent ChromaDB vector store:
+
+```bash
+python -m src.rag.ingest
+```
+
+Expected output:
+```
+Indexed 4 documents into 234 chunks at artifacts/vector_store
+```
+
+### Ingestion Pipeline Architecture
+
+| Component | Implementation |
+|-----------|----------------|
+| **Loader** | `DirectoryLoader` + `PyPDFLoader` scans `dataset/raw/manuals/` |
+| **Text Cleaning** | Normalizes whitespace, removes non-ASCII characters |
+| **Chunking** | `RecursiveCharacterTextSplitter` with 700 char size, 150 char overlap |
+| **Embeddings** | `HuggingFaceEmbeddings` using `all-MiniLM-L6-v2` (local, no API key) |
+| **Vector Store** | `Chroma` persisted to `artifacts/vector_store/` |
+| **Audit** | Prints document and chunk counts after indexing |
+
+### Path Constants
+
+RAG paths are defined in `src/utils.py`:
+
+- `MANUALS_PATH`: `dataset/raw/manuals/` — Source PDF directory
+- `VECTOR_DB_PATH`: `artifacts/vector_store/` — ChromaDB persistence location
+
+### Manuals Directory
+
+Place agricultural treatment PDFs in `dataset/raw/manuals/`:
+
+```text
+dataset/raw/manuals/
+├── MODULE3.pdf
+├── Tomato_Disease.pdf
+├── ppfs-vg-17.pdf
+└── spider_mites.pdf
+```
+
+### Using the Vector Store
+
+Load the knowledge base for querying:
+
+```python
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from src.utils import VECTOR_DB_PATH
+
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vector_store = Chroma(
+    persist_directory=str(VECTOR_DB_PATH),
+    embedding_function=embeddings,
+)
+
+# Search for treatment guidance
+results = vector_store.similarity_search("treatment for tomato blight", k=3)
+```
+
+## Groq LLM Integration
+
+The project integrates Groq's high-performance LLM API for generating diagnostic reports and treatment recommendations based on vision model predictions and retrieved knowledge base context.
+
+### Environment Setup
+
+Set your Groq API key in a `.env` file in the project root:
+
+```bash
+LLM_API=your_groq_api_key_here
+```
+
+The key is automatically loaded by `src/utils.py` at runtime.
+
+### Running a Diagnostic Test
+
+Test the Groq integration with a simulated prediction:
+
+```bash
+python -m src.orchestrator.main
+```
+
+Expected output shows response time and a sample diagnostic report with treatment recommendations.
+
+### Available Models
+
+| Model | Use Case | Speed | Reasoning |
+|-------|----------|-------|-----------|
+| `llama-3.1-70b-versatile` | Complex agricultural manuals | Slower | High |
+| `llama-3.1-8b-instant` | Quick responses, simple queries | Fast | Moderate |
+
+### Diagnostic Report Generation
+
+Generate treatment recommendations programmatically:
+
+```python
+from src.orchestrator.main import generate_diagnostic_report
+from langchain_community.vectorstores import Chroma
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from src.utils import VECTOR_DB_PATH
+
+# Retrieve context from knowledge base
+embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+vector_store = Chroma(
+    persist_directory=str(VECTOR_DB_PATH),
+    embedding_function=embeddings,
+)
+
+retrieved_docs = vector_store.similarity_search(
+    "Tomato Late blight treatment", k=3
+)
+
+# Generate diagnostic report
+report = generate_diagnostic_report(
+    class_name="Tomato_Late_blight",
+    confidence=0.94,
+    retrieved_docs=retrieved_docs,
+    model_name="llama-3.1-70b-versatile",  # or "llama-3.1-8b-instant" for speed
+)
+
+print(report)
+```
+
+The generated report includes:
+- Brief disease description
+- Immediate treatment steps (priority actions)
+- Preventive measures for future crops
+- Guidance on when to seek professional extension services
+
+### Architecture
+
+| Component | Implementation |
+|-----------|----------------|
+| **API Key Loading** | `get_groq_api_key()` in `src/utils.py` loads `LLM_API` from `.env` |
+| **LLM Client** | `ChatGroq` from `langchain-groq` with configurable model/temperature |
+| **Prompt Template** | `create_diagnostic_prompt()` — agronomist persona with structured output |
+| **Report Generator** | `generate_diagnostic_report()` — combines vision + RAG + LLM |
+| **Dry Run Test** | `run_dry_run_test()` — validates Groq connectivity |
+
 ## Suggested Next Steps
 
-- Add PDF or document ingestion in `src/rag/ingest.py`.
-- Connect prediction and retrieval in `src/orchestrator/main.py`.
-- Implement RAG layer to retrieve treatment guidance from knowledge base.
+- Build the full end-to-end pipeline: image → prediction → RAG retrieval → Groq report
+- Add streaming response support for real-time diagnostic generation
+- Implement caching for frequently queried disease contexts
 
 ## Project Metadata
 

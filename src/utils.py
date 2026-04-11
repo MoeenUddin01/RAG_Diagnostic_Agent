@@ -5,9 +5,33 @@ Provides device selection and path helpers used across ``src/``.
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import torch
+from dotenv import load_dotenv
+
+
+# Load environment variables from .env file
+_ = load_dotenv()
+
+
+def get_groq_api_key() -> str:
+    """Load and verify the LLM_API from environment.
+
+    Returns:
+        The Groq API key string.
+
+    Raises:
+        ValueError: If LLM_API is not set in environment.
+    """
+    api_key = os.getenv("LLM_API")
+    if not api_key:
+        raise ValueError(
+            "LLM_API not found in environment. "
+            "Please set it in your .env file or environment variables."
+        )
+    return api_key
 
 
 def get_device() -> torch.device:
@@ -56,3 +80,11 @@ def get_artifacts_dir() -> Path:
     artifacts = get_project_root() / "artifacts"
     artifacts.mkdir(parents=True, exist_ok=True)
     return artifacts
+
+
+# RAG path constants
+VECTOR_DB_PATH: Path = get_project_root() / "artifacts" / "vector_store"
+"""Path to the ChromaDB vector store for RAG retrieval."""
+
+MANUALS_PATH: Path = get_project_root() / "dataset" / "raw" / "manuals"
+"""Path to the agricultural PDF manuals for knowledge base ingestion."""
