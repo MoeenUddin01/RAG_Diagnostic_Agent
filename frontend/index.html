@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlantDoc - AI Plant Diagnostics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">
+                <span class="logo">🌿 PlantDoc</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#about">About</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="home">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <span class="hero-label">AI PLANT DIAGNOSTICS</span>
+                    <h1>Upload a leaf image. Get an instant diagnosis.</h1>
+                    <p class="hero-subtext">
+                        Powered by EfficientNet-B2 deep learning model combined with Retrieval-Augmented Generation (RAG) for accurate disease identification and treatment recommendations.
+                    </p>
+                    <a href="#upload" class="btn btn-primary">Diagnose Now</a>
+                </div>
+                <div class="hero-visual">
+                    <img src="assets/leaf-icon.svg" alt="Leaf illustration" class="leaf-decoration">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Bar -->
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">15</div>
+                    <div class="stat-label">Disease Classes</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">13,474</div>
+                    <div class="stat-label">Images Trained</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Crop Types</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="steps-grid">
+                <div class="step-card">
+                    <div class="step-number">1</div>
+                    <h3>Image Upload</h3>
+                    <p>Upload a clear photo of your plant leaf showing any visible symptoms or abnormalities.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">2</div>
+                    <h3>EfficientNet-B2 Analysis</h3>
+                    <p>Our deep learning model, built on EfficientNet-B2 architecture, processes your image through convolutional neural networks trained on 13,474 labeled plant disease images across 15 disease classes.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">3</div>
+                    <h3>Disease Classification</h3>
+                    <p>The model identifies the specific disease with high accuracy, providing confidence scores for each prediction across Pepper, Potato, and Tomato crop types.</p>
+                </div>
+                <div class="step-card">
+                    <div class="step-number">4</div>
+                    <h3>RAG-Powered Insights</h3>
+                    <p>Retrieval-Augmented Generation (RAG) system searches our knowledge base to provide relevant treatment recommendations and management practices for the identified disease.</p>
+                </div>
+            </div>
+            <div class="model-info">
+                <h3>About Our Model</h3>
+                <div class="model-details">
+                    <div class="model-detail">
+                        <h4>Architecture</h4>
+                        <p>EfficientNet-B2 - A state-of-the-art convolutional neural network optimized for accuracy and efficiency, using compound scaling to uniformly scale depth, width, and resolution.</p>
+                    </div>
+                    <div class="model-detail">
+                        <h4>Training Data</h4>
+                        <p>Trained on the PlantVillage dataset with 13,474 images covering 15 distinct disease classes across three major crops: Pepper, Potato, and Tomato.</p>
+                    </div>
+                    <div class="model-detail">
+                        <h4>Two-Phase Training</h4>
+                        <p>Warm-up phase with frozen backbone (5 epochs) followed by full fine-tuning (25 epochs) for optimal feature extraction and classification performance.</p>
+                    </div>
+                    <div class="model-detail">
+                        <h4>Class Imbalance Handling</h4>
+                        <p>Uses WeightedRandomSampler to ensure balanced training across all classes, preventing bias toward more common diseases.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section class="about" id="about">
+        <div class="container">
+            <h2 class="section-title">About PlantDoc</h2>
+            <div class="about-content">
+                <div class="about-mission">
+                    <h3>Our Mission</h3>
+                    <p>PlantDoc aims to democratize plant disease diagnosis by making AI-powered detection accessible to everyone. We help farmers, gardeners, and agricultural workers identify plant diseases early, reducing crop loss and promoting sustainable agriculture practices.</p>
+                    <p>According to the Food and Agriculture Organization (FAO), up to 40% of global crop production is lost annually due to plant diseases and pests. Early detection and accurate diagnosis are critical to preventing these losses and ensuring food security.</p>
+                </div>
+                <div class="about-tech">
+                    <h3>Technology Stack</h3>
+                    <div class="tech-grid">
+                        <div class="tech-item">
+                            <div class="tech-icon">🧠</div>
+                            <h4>PyTorch</h4>
+                            <p>Deep learning framework for model training and inference</p>
+                        </div>
+                        <div class="tech-item">
+                            <div class="tech-icon">🔬</div>
+                            <h4>EfficientNet-B2</h4>
+                            <p>State-of-the-art CNN architecture for image classification</p>
+                        </div>
+                        <div class="tech-item">
+                            <div class="tech-icon">📚</div>
+                            <h4>LangChain + ChromaDB</h4>
+                            <p>RAG system for retrieving treatment recommendations</p>
+                        </div>
+                        <div class="tech-item">
+                            <div class="tech-icon">⚡</div>
+                            <h4>FastAPI</h4>
+                            <p>High-performance REST API for model serving</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-impact">
+                    <h3>Our Impact</h3>
+                    <div class="impact-grid">
+                        <div class="impact-item">
+                            <div class="impact-number">15</div>
+                            <div class="impact-label">Disease Classes</div>
+                            <p>Comprehensive coverage of common plant diseases</p>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-number">3</div>
+                            <div class="impact-label">Crop Types</div>
+                            <p>Pepper, Potato, and Tomato support</p>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-number">13,474</div>
+                            <div class="impact-label">Training Images</div>
+                            <p>Trained on PlantVillage dataset</p>
+                        </div>
+                        <div class="impact-item">
+                            <div class="impact-number">95%+</div>
+                            <div class="impact-label">Accuracy</div>
+                            <p>High confidence in disease detection</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="about-future">
+                    <h3>Future Goals</h3>
+                    <ul class="future-list">
+                        <li>🌱 Expand to support more crop types (corn, wheat, rice, etc.)</li>
+                        <li>📱 Develop mobile applications for iOS and Android</li>
+                        <li>🌐 Add offline support for areas with limited internet connectivity</li>
+                        <li>🔬 Integrate multi-disease detection in a single image</li>
+                        <li>🤖 Enhance RAG system with more comprehensive treatment databases</li>
+                        <li>🌍 Add multi-language support for global accessibility</li>
+                    </ul>
+                </div>
+                <div class="about-privacy">
+                    <h3>Privacy & Data</h3>
+                    <p>Your privacy is important to us. Images uploaded to PlantDoc are processed in real-time and are not stored on our servers. We do not collect, share, or sell your personal data or images. Our model runs entirely on our infrastructure with no third-party data sharing.</p>
+                </div>
+                <div class="about-contact">
+                    <h3>Get Involved</h3>
+                    <p>PlantDoc is an open-source project. We welcome contributions from developers, researchers, and agricultural experts. Together, we can build better tools for sustainable agriculture.</p>
+                    <div class="contact-links">
+                        <a href="https://github.com/yourusername/rag-diagnostic-agent" target="_blank" class="btn btn-primary">
+                            🐙 View on GitHub
+                        </a>
+                        <a href="https://github.com/yourusername/rag-diagnostic-agent/issues" target="_blank" class="btn btn-secondary">
+                            🐛 Report an Issue
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload Section -->
+    <section class="upload-section" id="upload">
+        <div class="container">
+            <h2 class="section-title">Diagnose Your Plant</h2>
+            <div class="upload-card" id="uploadCard">
+                <input type="file" id="fileInput" accept="image/jpeg,image/png" hidden>
+                <div class="upload-content" id="uploadContent">
+                    <div class="upload-icon">🌱</div>
+                    <p class="upload-text">Drop your leaf image here or click to browse</p>
+                    <p class="upload-hint">Supports JPG and PNG formats</p>
+                </div>
+                <div class="preview-container" id="previewContainer" style="display: none;">
+                    <img id="imagePreview" alt="Preview" class="image-preview">
+                    <button class="btn btn-secondary" id="removeImage">Remove</button>
+                    <button class="btn btn-primary" id="analyzeBtn">Analyze</button>
+                </div>
+            </div>
+            <div class="error-message" id="errorMessage" style="display: none;"></div>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section class="results-section" id="resultsSection" style="display: none;">
+        <div class="container">
+            <h2 class="section-title">Diagnosis Results</h2>
+            <div class="results-content">
+                <div class="result-card">
+                    <h3 class="disease-name" id="diseaseName">--</h3>
+                    <div class="confidence-container">
+                        <div class="confidence-ring">
+                            <svg class="progress-ring" width="150" height="150">
+                                <circle class="progress-ring-bg" cx="75" cy="75" r="65"></circle>
+                                <circle class="progress-ring-circle" id="progressCircle" cx="75" cy="75" r="65"></circle>
+                            </svg>
+                            <div class="confidence-text">
+                                <span class="confidence-value" id="confidenceValue">0</span>
+                                <span class="confidence-percent">%</span>
+                            </div>
+                        </div>
+                        <p class="confidence-label">Confidence</p>
+                    </div>
+                </div>
+                <div class="treatment-card">
+                    <h3>Treatment Tips</h3>
+                    <div class="treatment-content" id="treatmentContent">
+                        <p>--</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>Built with PyTorch · LangChain · ChromaDB · FastAPI</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

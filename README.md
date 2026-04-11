@@ -23,6 +23,7 @@ This repository is a work in progress. The following components are implemented:
 - **Quick testing**: `max_batches` parameter in config.dev.yaml for fast smoke testing
 - **FastAPI API**: RESTful API with health check and prediction endpoints
 - **Streamlit UI**: Interactive web interface for image upload and classification
+- **Frontend**: Production-ready vanilla HTML/CSS/JS web interface with drag-and-drop upload
 - **RAG**: Not yet implemented
 
 The training, evaluation, and API/UI pipelines are fully functional and can be run via
@@ -70,6 +71,15 @@ app/
     response.py        Prediction and health response schemas
   streamlit.py         Interactive Streamlit UI for image classification
   templates/           HTML templates (for future web interface)
+
+frontend/             Production-ready vanilla web interface
+  index.html           Main HTML page with semantic structure
+  css/
+    styles.css         Custom CSS with variables and responsive design
+  js/
+    main.js            Vanilla JavaScript for API interaction
+  assets/
+    leaf-icon.svg      Decorative SVG illustration
 
 src/
   data/                Dataset balancing, splitting, loading, and label encoding
@@ -573,6 +583,70 @@ The UI will be available at `http://localhost:8501`.
 - Top 5 predictions bar chart
 - Support for Pepper, Potato, and Tomato plants
 
+## Frontend
+
+The project includes a production-ready vanilla HTML/CSS/JavaScript web interface with a modern, responsive design.
+
+### Running the Frontend
+
+Start a simple HTTP server to serve the frontend:
+
+```bash
+python3 -m http.server 3000 --directory frontend
+```
+
+The frontend will be available at `http://localhost:3000`.
+
+Alternatively, you can open `frontend/index.html` directly in a browser without running a server.
+
+### Key Features
+
+- **Modern UI**: Clean, semantic HTML5 with Poppins font and smooth scrolling
+- **Responsive Design**: Fully responsive with mobile support (≤768px breakpoint)
+- **Drag-and-Drop Upload**: Intuitive file upload with image preview
+- **Real-time Analysis**: Instant prediction with animated confidence ring
+- **How It Works Section**: Detailed explanation of EfficientNet-B2 model architecture and training process
+- **About Section**: Project mission, technology stack, impact statistics, and future roadmap
+- **Error Handling**: Friendly error messages for backend issues
+- **No Dependencies**: Pure vanilla JavaScript, no frameworks required
+
+### Frontend Structure
+
+```text
+frontend/
+├── index.html          Main page with navbar, hero, stats, how-it-works, about, upload, and results sections
+├── css/
+│   └── styles.css      Custom CSS with variables, gradients, animations, and responsive design
+├── js/
+│   └── main.js         API integration with base64 conversion, error handling, and UI interactions
+└── assets/
+    └── leaf-icon.svg   Decorative SVG illustration
+```
+
+### Frontend Configuration
+
+The backend API URL is configured at the top of `frontend/js/main.js`:
+
+```javascript
+const BACKEND_URL = 'http://localhost:8000/v1/prediction/';
+```
+
+Update this URL for production deployment.
+
+### Running Full Stack
+
+To run both the backend API and frontend:
+
+```bash
+# Terminal 1: Start the FastAPI backend
+uv run uvicorn app.main:app --reload --port 8000
+
+# Terminal 2: Start the frontend server
+python3 -m http.server 3000 --directory frontend
+```
+
+Then open `http://localhost:3000` in your browser.
+
 ## Entry Points
 
 Available project entry points:
@@ -586,16 +660,18 @@ python -m src.pipelines.model_training # Alternative: CLI-based training
 python -m src.pipelines.model_evaluation
 uv run uvicorn app.main:app --reload   # FastAPI server
 uv run streamlit run app/streamlit.py  # Streamlit UI
+python3 -m http.server 3000 --directory frontend  # Frontend server
 ```
 
 The dataset preparation scripts (`data_preprocessing`, `data_splitting`), model
-training/evaluation pipelines (`model_training`, `model_evaluation`), and API/UI
-are fully implemented and runnable.
+training/evaluation pipelines (`model_training`, `model_evaluation`), API/UI
+(FastAPI, Streamlit, Frontend), and are fully implemented and runnable.
 
 ## Development Notes
 
 - Keep training and ML pipeline logic inside `src/`.
 - Keep API and UI serving concerns inside `app/`.
+- Keep frontend static assets inside `frontend/`.
 - Load deployed model artifacts from `artifacts/`.
 - Follow PEP 8 and prefer fully typed function signatures.
 - Use concise module boundaries so training, serving, and orchestration remain
