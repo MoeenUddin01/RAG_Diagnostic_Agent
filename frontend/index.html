@@ -227,9 +227,10 @@
 
     <!-- Results Section -->
     <section class="results-section" id="resultsSection" style="display: none;">
-        <div class="container">
-            <h2 class="section-title">Diagnosis Results</h2>
-            <div class="results-content">
+        <div class="container results-layout">
+            <!-- Main Content: Diagnosis -->
+            <div class="main-content">
+                <h2 class="section-title">Diagnosis Results</h2>
                 <div class="result-card">
                     <h3 class="disease-name" id="diseaseName">--</h3>
                     <div class="confidence-container">
@@ -244,15 +245,22 @@
                             </div>
                         </div>
                         <p class="confidence-label">Confidence</p>
-                    </div>
-                </div>
-                <div class="treatment-card">
-                    <h3>Treatment Tips</h3>
-                    <div class="treatment-content" id="treatmentContent">
-                        <p>--</p>
+                        <p class="confidence-label-detail" id="confidenceLabel"></p>
                     </div>
                 </div>
             </div>
+
+            <!-- Sidebar: Treatment Widget -->
+            <aside class="sidebar-widget" id="treatmentSidebar">
+                <span class="ai-badge">AI-Powered</span>
+                <div class="widget-header">
+                    <span class="widget-icon">💊</span>
+                    <h3>Treatment Tips</h3>
+                </div>
+                <div class="widget-content" id="treatmentContent">
+                    <p class="widget-placeholder">Upload and analyze an image to see AI-powered treatment recommendations.</p>
+                </div>
+            </aside>
         </div>
     </section>
 

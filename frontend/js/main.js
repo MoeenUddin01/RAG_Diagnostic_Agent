@@ -171,8 +171,20 @@ function displayResults(data) {
     const confidencePercent = confidence <= 1 ? confidence * 100 : confidence;
     animateConfidence(confidencePercent);
     
-    // Set treatment tips (backend doesn't provide this yet, so show a message)
-    treatmentContent.innerHTML = '<p>Treatment recommendations will be available in a future update using RAG-powered knowledge retrieval.</p>';
+    // Set treatment tips from RAG + Groq LLM response
+    if (data.treatment_recommendations) {
+        // Convert markdown-like formatting to HTML
+        const formattedTreatment = data.treatment_recommendations
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')  // Bold
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')  // Italic
+            .replace(/\n\n/g, '</p><p>')  // Paragraphs
+            .replace(/\n/g, '<br>')  // Line breaks
+            .replace(/^/, '<p>')  // Open first paragraph
+            .replace(/$/, '</p>');  // Close last paragraph
+        treatmentContent.innerHTML = formattedTreatment;
+    } else {
+        treatmentContent.innerHTML = '<p><em>AI-powered treatment recommendations are currently unavailable. Please consult an agricultural extension service for treatment guidance.</em></p>';
+    }
     
     // Show results section
     resultsSection.style.display = 'block';
@@ -197,6 +209,27 @@ function animateConfidence(percentage) {
     
     // Animate number counter
     animateNumber(confidenceValue, 0, Math.round(percentage), 1000);
+    
+    // Remove previous confidence classes
+    progressCircle.classList.remove('confidence-high', 'confidence-medium', 'confidence-low');
+    
+    // Apply appropriate confidence class and label
+    const confidenceLabel = document.getElementById('confidenceLabel');
+    confidenceLabel.classList.remove('high', 'medium', 'low');
+    
+    if (percentage >= 75) {
+        progressCircle.classList.add('confidence-high');
+        confidenceLabel.textContent = 'High Confidence';
+        confidenceLabel.classList.add('high');
+    } else if (percentage >= 50) {
+        progressCircle.classList.add('confidence-medium');
+        confidenceLabel.textContent = 'Medium Confidence';
+        confidenceLabel.classList.add('medium');
+    } else {
+        progressCircle.classList.add('confidence-low');
+        confidenceLabel.textContent = 'Low Confidence';
+        confidenceLabel.classList.add('low');
+    }
 }
 
 // Animate number counter
