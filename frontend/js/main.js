@@ -1,5 +1,5 @@
-// Backend API URL - Change this for production deployment
-const BACKEND_URL = 'http://localhost:8000/v1/prediction/';
+// Backend API URL - Hugging Face Space deployment
+const BACKEND_URL = 'https://moeenuddin01-plantdoc-ai.hf.space/v1/prediction/';
 
 // DOM Elements
 const uploadCard = document.getElementById('uploadCard');

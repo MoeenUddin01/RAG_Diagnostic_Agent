@@ -1,0 +1,11 @@
+{
+  "name": "plantdoc-frontend",
+  "version": "1.0.0",
+  "description": "PlantDoc AI Plant Diagnostics Frontend",
+  "scripts": {
+    "dev": "python -m http.server 3000"
+  },
+  "keywords": ["plant-disease", "ai", "diagnostics"],
+  "author": "",
+  "license": "MIT"
+}
