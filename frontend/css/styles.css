@@ -1021,6 +1021,7 @@ body {
     grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
     margin-top: 3rem;
+    width: 100%;
 }
 
 .crop-category {
@@ -1029,6 +1030,7 @@ body {
     padding: 2rem;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    height: 100%;
 }
 
 .crop-category:hover {
@@ -1069,6 +1071,7 @@ body {
     font-weight: 500;
     color: #333;
     flex: 1;
+    margin-right: 1rem;
 }
 
 .disease-status {
