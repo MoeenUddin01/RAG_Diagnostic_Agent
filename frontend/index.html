@@ -1,9 +1,1089 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>RAG Diagnostic Agent</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlantDoc — AI Plant Disease Diagnostics</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --green-deep: #1a3a2a;
+            --green-primary: #2d6a4f;
+            --green-mid: #40916c;
+            --green-light: #74c69d;
+            --green-pale: #d8f3dc;
+            --green-bg: #f0f7f1;
+            --accent: #52b788;
+            --white: #ffffff;
+            --text-dark: #1b2e24;
+            --text-mid: #4a6355;
+            --text-light: #7a9e8a;
+            --border: #c7e8d0;
+            --shadow-sm: 0 2px 8px rgba(26,58,42,0.08);
+            --shadow-md: 0 8px 32px rgba(26,58,42,0.12);
+            --shadow-lg: 0 24px 64px rgba(26,58,42,0.18);
+            --radius: 16px;
+            --radius-sm: 10px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--green-bg);
+            color: var(--text-dark);
+            min-height: 100vh;
+        }
+
+        /* ── NAVBAR ── */
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 64px;
+        }
+
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: 'Fraunces', serif;
+            font-weight: 700;
+            font-size: 1.4rem;
+            color: var(--green-deep);
+            text-decoration: none;
+        }
+
+        .nav-logo-icon {
+            width: 34px;
+            height: 34px;
+            background: var(--green-primary);
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-mid);
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--green-primary); }
+
+        /* ── HERO ── */
+        .hero {
+            padding: 80px 40px 60px;
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 60px;
+            align-items: center;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--green-pale);
+            color: var(--green-primary);
+            border: 1px solid var(--border);
+            padding: 5px 14px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 24px;
+        }
+
+        .hero h1 {
+            font-family: 'Fraunces', serif;
+            font-size: 3.4rem;
+            font-weight: 700;
+            line-height: 1.1;
+            color: var(--green-deep);
+            margin-bottom: 20px;
+        }
+
+        .hero h1 em {
+            font-style: italic;
+            color: var(--green-mid);
+        }
+
+        .hero p {
+            color: var(--text-mid);
+            font-size: 1.05rem;
+            line-height: 1.7;
+            margin-bottom: 32px;
+            max-width: 420px;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: var(--green-deep);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 100px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            box-shadow: 0 4px 16px rgba(26,58,42,0.25);
+        }
+
+        .hero-cta:hover {
+            background: var(--green-primary);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(26,58,42,0.3);
+        }
+
+        .hero-visual {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-leaf-bg {
+            width: 340px;
+            height: 340px;
+            background: radial-gradient(circle at 40% 40%, var(--green-light), var(--green-primary));
+            border-radius: 60% 40% 55% 45% / 50% 60% 40% 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 120px;
+            box-shadow: var(--shadow-lg);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(-2deg); }
+            50% { transform: translateY(-16px) rotate(2deg); }
+        }
+
+        .stats-strip {
+            background: var(--white);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 28px 40px;
+            display: flex;
+            justify-content: center;
+            gap: 80px;
+        }
+
+        .stat-item { text-align: center; }
+
+        .stat-number {
+            font-family: 'Fraunces', serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--green-primary);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-top: 4px;
+            font-weight: 500;
+            letter-spacing: 0.04em;
+        }
+
+        /* ── DIAGNOSE SECTION ── */
+        .diagnose-section {
+            padding: 72px 40px;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 48px;
+        }
+
+        .section-header h2 {
+            font-family: 'Fraunces', serif;
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: var(--green-deep);
+            margin-bottom: 12px;
+        }
+
+        .section-header p {
+            color: var(--text-mid);
+            font-size: 1rem;
+        }
+
+        .diagnose-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            align-items: start;
+        }
+
+        /* ── UPLOAD CARD ── */
+        .upload-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 32px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--text-dark);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--green-mid);
+            border-radius: 50%;
+        }
+
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius-sm);
+            padding: 48px 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s;
+            background: var(--green-bg);
+            position: relative;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--green-mid);
+            background: var(--green-pale);
+        }
+
+        .upload-zone.dragover {
+            border-color: var(--green-primary);
+            background: var(--green-pale);
+            transform: scale(1.01);
+        }
+
+        .upload-zone-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .upload-zone-text {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+        }
+
+        .upload-zone-hint {
+            color: var(--text-light);
+            font-size: 0.82rem;
+        }
+
+        .upload-zone-btn {
+            display: inline-block;
+            margin-top: 16px;
+            padding: 9px 20px;
+            background: var(--green-primary);
+            color: white;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .upload-zone-btn:hover { background: var(--green-mid); }
+
+        #fileInput { display: none; }
+
+        .preview-zone {
+            display: none;
+            position: relative;
+        }
+
+        .preview-zone img {
+            width: 100%;
+            height: 260px;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+
+        .preview-overlay {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .preview-btn {
+            background: rgba(255,255,255,0.95);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-dark);
+        }
+
+        .preview-btn:hover { background: white; box-shadow: var(--shadow-sm); }
+
+        .preview-btn.primary {
+            background: var(--green-deep);
+            color: white;
+            border-color: var(--green-deep);
+        }
+
+        .preview-btn.primary:hover { background: var(--green-primary); }
+        .preview-btn.primary:disabled {
+            background: #ccc;
+            border-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* ── LOADING ── */
+        .loading-card {
+            display: none;
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 48px 32px;
+            text-align: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .loading-dots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .loading-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--green-mid);
+            border-radius: 50%;
+            animation: bounce 1.2s ease-in-out infinite;
+        }
+
+        .loading-dot:nth-child(2) { animation-delay: 0.2s; }
+        .loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: translateY(0); opacity: 0.5; }
+            40% { transform: translateY(-12px); opacity: 1; }
+        }
+
+        .loading-text {
+            color: var(--text-mid);
+            font-size: 0.9rem;
+        }
+
+        .loading-steps {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .loading-step {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            opacity: 0;
+            animation: stepFade 0.5s ease forwards;
+        }
+
+        @keyframes stepFade {
+            to { opacity: 1; }
+        }
+
+        /* ── ERROR ── */
+        .error-card {
+            display: none;
+            background: #fff5f5;
+            border: 1px solid #fecaca;
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            color: #dc2626;
+            font-size: 0.88rem;
+            margin-top: 16px;
+        }
+
+        /* ── RESULTS ── */
+        .results-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .result-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 28px;
+            box-shadow: var(--shadow-sm);
+            animation: slideUp 0.4s ease;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .diagnosis-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .disease-name {
+            font-family: 'Fraunces', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--green-deep);
+            line-height: 1.2;
+        }
+
+        .confidence-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 100px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .confidence-badge.high {
+            background: #dcfce7;
+            color: #16a34a;
+            border: 1px solid #bbf7d0;
+        }
+
+        .confidence-badge.medium {
+            background: #fef9c3;
+            color: #ca8a04;
+            border: 1px solid #fde68a;
+        }
+
+        .confidence-badge.low {
+            background: #fee2e2;
+            color: #dc2626;
+            border: 1px solid #fecaca;
+        }
+
+        .confidence-meter {
+            margin-top: 16px;
+        }
+
+        .confidence-meter-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .confidence-meter-bar {
+            height: 8px;
+            background: var(--green-pale);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .confidence-meter-fill {
+            height: 100%;
+            border-radius: 100px;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(90deg, var(--green-light), var(--green-primary));
+        }
+
+        /* ── TREATMENT CARD ── */
+        .treatment-card {
+            background: var(--green-deep);
+            border-radius: var(--radius);
+            padding: 28px;
+            color: white;
+            box-shadow: var(--shadow-md);
+            animation: slideUp 0.5s ease 0.1s both;
+        }
+
+        .treatment-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .treatment-tag {
+            background: rgba(255,255,255,0.15);
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .treatment-title {
+            font-family: 'Fraunces', serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .treatment-body {
+            font-size: 0.88rem;
+            line-height: 1.75;
+            color: rgba(255,255,255,0.88);
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .treatment-body::-webkit-scrollbar { width: 4px; }
+        .treatment-body::-webkit-scrollbar-track { background: rgba(255,255,255,0.1); border-radius: 2px; }
+        .treatment-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 2px; }
+
+        /* Render markdown-like formatting */
+        .treatment-body strong { color: white; font-weight: 600; }
+
+        .treatment-section {
+            margin-bottom: 16px;
+        }
+
+        .treatment-section-title {
+            font-weight: 600;
+            color: var(--green-light);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 8px;
+        }
+
+        .treatment-point {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 6px;
+            align-items: flex-start;
+        }
+
+        .treatment-point-dot {
+            width: 6px;
+            height: 6px;
+            background: var(--green-light);
+            border-radius: 50%;
+            flex-shrink: 0;
+            margin-top: 7px;
+        }
+
+        .treatment-error {
+            background: rgba(255,100,100,0.2);
+            border: 1px solid rgba(255,100,100,0.3);
+            padding: 14px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            text-align: center;
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* ── PROBABILITIES ── */
+        .probs-card {
+            background: var(--white);
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            padding: 24px 28px;
+            box-shadow: var(--shadow-sm);
+            animation: slideUp 0.5s ease 0.2s both;
+        }
+
+        .probs-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-mid);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 16px;
+        }
+
+        .prob-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--green-bg);
+        }
+
+        .prob-row:last-child { border-bottom: none; }
+
+        .prob-name {
+            font-size: 0.78rem;
+            color: var(--text-mid);
+            width: 180px;
+            flex-shrink: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .prob-bar-wrap {
+            flex: 1;
+            height: 6px;
+            background: var(--green-bg);
+            border-radius: 100px;
+            overflow: hidden;
+        }
+
+        .prob-bar-fill {
+            height: 100%;
+            border-radius: 100px;
+            background: linear-gradient(90deg, var(--green-light), var(--green-primary));
+            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .prob-pct {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--green-primary);
+            width: 48px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        /* ── PLACEHOLDER ── */
+        .results-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--white);
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 60px 32px;
+            text-align: center;
+            color: var(--text-light);
+        }
+
+        .results-placeholder-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+        .results-placeholder p { font-size: 0.88rem; }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--green-deep);
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+            padding: 24px;
+            font-size: 0.82rem;
+            margin-top: 40px;
+        }
+
+        footer strong { color: white; }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            nav { padding: 0 20px; }
+            .nav-links { display: none; }
+            .hero { grid-template-columns: 1fr; padding: 40px 20px; gap: 32px; }
+            .hero-visual { display: none; }
+            .hero h1 { font-size: 2.4rem; }
+            .stats-strip { gap: 32px; padding: 20px; flex-wrap: wrap; }
+            .diagnose-section { padding: 40px 20px; }
+            .diagnose-layout { grid-template-columns: 1fr; }
+            .prob-name { width: 120px; }
+        }
+    </style>
 </head>
 <body>
-    <h1>RAG Diagnostic Agent</h1>
+
+<!-- NAV -->
+<nav>
+    <a class="nav-logo" href="#">
+        <div class="nav-logo-icon">🌿</div>
+        PlantDoc
+    </a>
+    <ul class="nav-links">
+        <li><a href="#">Home</a></li>
+        <li><a href="#diagnose">Diagnose</a></li>
+        <li><a href="#">Diseases</a></li>
+        <li><a href="#">About</a></li>
+    </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div class="hero-text">
+        <div class="hero-badge">🌱 AI Plant Diagnostics</div>
+        <h1>Upload a leaf.<br><em>Get an instant</em><br>diagnosis.</h1>
+        <p>Powered by EfficientNet-B2 and Retrieval-Augmented Generation — accurate disease identification and expert treatment recommendations in seconds.</p>
+        <button class="hero-cta" onclick="document.getElementById('diagnose').scrollIntoView({behavior:'smooth'})">
+            Diagnose Now →
+        </button>
+    </div>
+    <div class="hero-visual">
+        <div class="hero-leaf-bg">🍃</div>
+    </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-strip">
+    <div class="stat-item">
+        <div class="stat-number">15</div>
+        <div class="stat-label">Disease Classes</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">13,474</div>
+        <div class="stat-label">Images Trained</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">3</div>
+        <div class="stat-label">Crop Types</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">RAG</div>
+        <div class="stat-label">Powered Insights</div>
+    </div>
+</div>
+
+<!-- DIAGNOSE -->
+<section class="diagnose-section" id="diagnose">
+    <div class="section-header">
+        <h2>Diagnose Your Plant</h2>
+        <p>Upload a clear photo of your plant leaf to get an AI-powered diagnosis</p>
+    </div>
+
+    <div class="diagnose-layout">
+        <!-- LEFT: Upload -->
+        <div>
+            <div class="upload-card">
+                <div class="card-title">
+                    <div class="card-title-dot"></div>
+                    Upload Leaf Image
+                </div>
+
+                <div class="upload-zone" id="uploadZone">
+                    <span class="upload-zone-icon">🖼️</span>
+                    <div class="upload-zone-text">Drop your image here</div>
+                    <div class="upload-zone-hint">JPG or PNG, max 10MB</div>
+                    <div class="upload-zone-btn">Browse Files</div>
+                    <input type="file" id="fileInput" accept="image/jpeg,image/png">
+                </div>
+
+                <div class="preview-zone" id="previewZone">
+                    <img id="previewImage" alt="Leaf preview">
+                    <div class="preview-overlay">
+                        <button class="preview-btn" id="removeBtn">✕ Remove</button>
+                        <button class="preview-btn primary" id="analyzeBtn">🔍 Analyze</button>
+                    </div>
+                </div>
+
+                <div class="error-card" id="errorCard"></div>
+            </div>
+
+            <!-- Loading -->
+            <div class="loading-card" id="loadingCard" style="margin-top:20px;">
+                <div class="loading-dots">
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                    <div class="loading-dot"></div>
+                </div>
+                <div class="loading-text">Analyzing your plant...</div>
+                <div class="loading-steps" id="loadingSteps"></div>
+            </div>
+        </div>
+
+        <!-- RIGHT: Results -->
+        <div class="results-col" id="resultsCol">
+            <div class="results-placeholder" id="resultsPlaceholder">
+                <div class="results-placeholder-icon">🔬</div>
+                <p>Your diagnosis results will<br>appear here after analysis</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<footer>
+    Built with <strong>EfficientNet-B2</strong> · <strong>LangChain + ChromaDB</strong> · <strong>FastAPI</strong> — PlantDoc AI Diagnostics
+</footer>
+
+<script>
+    const uploadZone = document.getElementById('uploadZone');
+    const fileInput = document.getElementById('fileInput');
+    const previewZone = document.getElementById('previewZone');
+    const previewImage = document.getElementById('previewImage');
+    const analyzeBtn = document.getElementById('analyzeBtn');
+    const removeBtn = document.getElementById('removeBtn');
+    const loadingCard = document.getElementById('loadingCard');
+    const loadingSteps = document.getElementById('loadingSteps');
+    const resultsCol = document.getElementById('resultsCol');
+    const resultsPlaceholder = document.getElementById('resultsPlaceholder');
+    const errorCard = document.getElementById('errorCard');
+
+    let selectedFile = null;
+
+    // Upload zone click
+    uploadZone.addEventListener('click', () => fileInput.click());
+
+    uploadZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+
+    uploadZone.addEventListener('drop', e => {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        if (e.dataTransfer.files.length > 0) handleFile(e.dataTransfer.files[0]);
+    });
+
+    fileInput.addEventListener('change', e => {
+        if (e.target.files.length > 0) handleFile(e.target.files[0]);
+    });
+
+    function handleFile(file) {
+        if (!file.type.match('image/jpeg') && !file.type.match('image/png')) {
+            showError('Please select a JPG or PNG image.');
+            return;
+        }
+        selectedFile = file;
+        const reader = new FileReader();
+        reader.onload = e => {
+            previewImage.src = e.target.result;
+            uploadZone.style.display = 'none';
+            previewZone.style.display = 'block';
+            hideError();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    removeBtn.addEventListener('click', resetUpload);
+
+    function resetUpload() {
+        selectedFile = null;
+        previewZone.style.display = 'none';
+        uploadZone.style.display = 'block';
+        loadingCard.style.display = 'none';
+        fileInput.value = '';
+        hideError();
+        showPlaceholder();
+    }
+
+    analyzeBtn.addEventListener('click', async () => {
+        if (!selectedFile) return;
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = 'Analyzing…';
+        loadingCard.style.display = 'block';
+        loadingSteps.innerHTML = '';
+        showPlaceholder();
+        hideError();
+
+        const steps = ['🔍 Running EfficientNet-B2 inference…', '📚 Searching knowledge base…', '🤖 Generating treatment report…'];
+        steps.forEach((s, i) => {
+            setTimeout(() => {
+                const el = document.createElement('div');
+                el.className = 'loading-step';
+                el.style.animationDelay = `${i * 0.3}s`;
+                el.textContent = s;
+                loadingSteps.appendChild(el);
+            }, i * 1200);
+        });
+
+        try {
+            const base64 = await fileToBase64(selectedFile);
+            const response = await fetch('/v1/prediction/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ image_base64: base64 })
+            });
+
+            if (!response.ok) throw new Error(`Server error: ${response.status}`);
+            const data = await response.json();
+            displayResults(data);
+        } catch (err) {
+            showError('Failed to analyze: ' + err.message);
+            showPlaceholder();
+        } finally {
+            loadingCard.style.display = 'none';
+            analyzeBtn.disabled = false;
+            analyzeBtn.textContent = '🔍 Analyze';
+        }
+    });
+
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(',')[1]);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function formatDiseaseName(raw) {
+        return raw
+            .replace(/_/g, ' ')
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/\b\w/g, c => c.toUpperCase());
+    }
+
+    function getConfidenceLevel(conf) {
+        if (conf >= 0.8) return { label: 'High Confidence', cls: 'high' };
+        if (conf >= 0.5) return { label: 'Medium Confidence', cls: 'medium' };
+        return { label: 'Low Confidence', cls: 'low' };
+    }
+
+    function renderTreatment(text) {
+        if (!text) return `<div class="treatment-error">Treatment recommendations unavailable. Please consult an agricultural expert.</div>`;
+
+        // Parse markdown-like text into structured HTML
+        const lines = text.split('\n').filter(l => l.trim());
+        let html = '';
+        let inSection = false;
+
+        lines.forEach(line => {
+            const trimmed = line.trim();
+            if (!trimmed) return;
+
+            // Bold headers like **Disease Description**:
+            if (trimmed.startsWith('**') && trimmed.includes('**:')) {
+                if (inSection) html += '</div>';
+                const title = trimmed.replace(/\*\*/g, '').replace(':', '').trim();
+                html += `<div class="treatment-section"><div class="treatment-section-title">${title}</div>`;
+                inSection = true;
+            }
+            // Bullet points starting with * or + or -
+            else if (trimmed.match(/^[\*\+\-•]\s/)) {
+                const content = trimmed.replace(/^[\*\+\-•]\s/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                html += `<div class="treatment-point"><div class="treatment-point-dot"></div><div>${content}</div></div>`;
+            }
+            // Numbered items
+            else if (trimmed.match(/^\d+\.\s/)) {
+                const content = trimmed.replace(/^\d+\.\s/, '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                html += `<div class="treatment-point"><div class="treatment-point-dot"></div><div>${content}</div></div>`;
+            }
+            // Plain text
+            else {
+                const content = trimmed.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                html += `<p style="margin-bottom:8px;">${content}</p>`;
+            }
+        });
+
+        if (inSection) html += '</div>';
+        return html;
+    }
+
+    function displayResults(data) {
+        const conf = data.confidence;
+        const level = getConfidenceLevel(conf);
+        const pct = (conf * 100).toFixed(1);
+        const diseaseName = formatDiseaseName(data.predicted_class);
+
+        // Sort top 6 probs
+        const topProbs = Object.entries(data.class_probabilities)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6);
+
+        const probRows = topProbs.map(([name, prob]) => {
+            const p = (prob * 100).toFixed(1);
+            return `
+                <div class="prob-row">
+                    <div class="prob-name">${formatDiseaseName(name)}</div>
+                    <div class="prob-bar-wrap">
+                        <div class="prob-bar-fill" style="width:${p}%"></div>
+                    </div>
+                    <div class="prob-pct">${p}%</div>
+                </div>`;
+        }).join('');
+
+        resultsCol.innerHTML = `
+            <div class="result-card">
+                <div class="diagnosis-header">
+                    <div class="disease-name">${diseaseName}</div>
+                    <div class="confidence-badge ${level.cls}">${level.label}</div>
+                </div>
+                <div class="confidence-meter">
+                    <div class="confidence-meter-label">
+                        <span>Confidence Score</span>
+                        <span>${pct}%</span>
+                    </div>
+                    <div class="confidence-meter-bar">
+                        <div class="confidence-meter-fill" style="width:${pct}%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="treatment-card">
+                <div class="treatment-header">
+                    <span>🩺</span>
+                    <div class="treatment-tag">AI Powered</div>
+                    <div class="treatment-title">Treatment Recommendations</div>
+                </div>
+                <div class="treatment-body">
+                    ${renderTreatment(data.treatment_recommendations)}
+                </div>
+            </div>
+
+            <div class="probs-card">
+                <div class="probs-title">Top Predictions</div>
+                ${probRows}
+            </div>
+        `;
+    }
+
+    function showPlaceholder() {
+        if (!resultsCol.querySelector('.result-card')) {
+            resultsCol.innerHTML = `
+                <div class="results-placeholder" id="resultsPlaceholder">
+                    <div class="results-placeholder-icon">🔬</div>
+                    <p>Your diagnosis results will<br>appear here after analysis</p>
+                </div>`;
+        }
+    }
+
+    function showError(msg) {
+        errorCard.textContent = '⚠️ ' + msg;
+        errorCard.style.display = 'block';
+    }
+
+    function hideError() {
+        errorCard.style.display = 'none';
+    }
+</script>
 </body>
 </html>
