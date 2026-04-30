@@ -716,6 +716,198 @@
 
         footer strong { color: white; }
 
+        /* ── SIDEBAR / ABOUT DRAWER ── */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(26,58,42,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 200;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 420px;
+            max-width: 90vw;
+            height: 100vh;
+            background: var(--white);
+            z-index: 201;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow-y: auto;
+            box-shadow: -8px 0 32px rgba(26,58,42,0.15);
+        }
+
+        .sidebar.active {
+            transform: translateX(0);
+        }
+
+        .sidebar-header {
+            position: sticky;
+            top: 0;
+            background: var(--white);
+            padding: 24px 28px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 1;
+        }
+
+        .sidebar-header h2 {
+            font-family: 'Fraunces', serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--green-deep);
+        }
+
+        .sidebar-close {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: var(--green-bg);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--green-primary);
+            transition: all 0.2s;
+        }
+
+        .sidebar-close:hover {
+            background: var(--green-pale);
+            color: var(--green-deep);
+        }
+
+        .sidebar-content {
+            padding: 28px;
+        }
+
+        .about-mission {
+            background: var(--green-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 28px;
+        }
+
+        .about-mission h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--green-deep);
+            margin-bottom: 12px;
+        }
+
+        .about-mission p {
+            font-size: 0.9rem;
+            color: var(--text-mid);
+            line-height: 1.7;
+        }
+
+        .sidebar-section {
+            margin-bottom: 28px;
+        }
+
+        .sidebar-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--green-deep);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .sidebar-section h3 span {
+            font-size: 1.2rem;
+        }
+
+        .disease-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .disease-group {
+            background: var(--white);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+        }
+
+        .disease-group-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--green-pale);
+        }
+
+        .disease-group-header span {
+            font-size: 20px;
+        }
+
+        .disease-group-header h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--green-deep);
+        }
+
+        .disease-tags-compact {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .disease-tag-sm {
+            padding: 4px 10px;
+            border-radius: 100px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .disease-tag-sm.healthy {
+            background: var(--green-pale);
+            color: var(--green-primary);
+        }
+
+        .disease-tag-sm.disease {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .about-btn {
+            background: var(--green-bg);
+            border: 1px solid var(--border);
+            color: var(--green-primary);
+            padding: 8px 16px;
+            border-radius: 100px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .about-btn:hover {
+            background: var(--green-pale);
+            border-color: var(--green-mid);
+        }
+
         /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
             nav { padding: 0 20px; }
@@ -738,12 +930,13 @@
         <div class="nav-logo-icon">🌿</div>
         PlantDoc
     </a>
-    <ul class="nav-links">
-        <li><a href="#">Home</a></li>
-        <li><a href="#diagnose">Diagnose</a></li>
-        <li><a href="#">Diseases</a></li>
-        <li><a href="#">About</a></li>
-    </ul>
+    <div style="display: flex; align-items: center; gap: 16px;">
+        <ul class="nav-links">
+            <li><a href="#">Home</a></li>
+            <li><a href="#diagnose">Diagnose</a></li>
+        </ul>
+        <button class="about-btn" onclick="openSidebar()">ℹ️ About</button>
+    </div>
 </nav>
 
 <!-- HERO -->
@@ -841,6 +1034,113 @@
 <footer>
     Built with <strong>EfficientNet-B2</strong> · <strong>LangChain + ChromaDB</strong> · <strong>FastAPI</strong> — PlantDoc AI Diagnostics
 </footer>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+<!-- ABOUT SIDEBAR -->
+<aside class="sidebar" id="aboutSidebar">
+    <div class="sidebar-header">
+        <h2>ℹ️ About PlantDoc</h2>
+        <button class="sidebar-close" onclick="closeSidebar()">✕</button>
+    </div>
+
+    <div class="sidebar-content">
+        <!-- Mission -->
+        <div class="about-mission">
+            <h3>🌱 Our Mission</h3>
+            <p>PlantDoc aims to democratize plant disease diagnosis by making AI-powered detection accessible to everyone. We help farmers, gardeners, and agricultural workers identify plant diseases early, reducing crop loss and promoting sustainable agriculture practices.</p>
+        </div>
+
+        <!-- Model Info -->
+        <div class="sidebar-section">
+            <h3><span>🤖</span> Model Details</h3>
+            <div class="disease-list">
+                <div class="disease-group">
+                    <div class="disease-group-header">
+                        <span>🧠</span>
+                        <h4>Architecture</h4>
+                    </div>
+                    <div class="disease-tags-compact">
+                        <span class="disease-tag-sm disease">EfficientNet-B2</span>
+                        <span class="disease-tag-sm disease">Transfer Learning</span>
+                    </div>
+                </div>
+                <div class="disease-group">
+                    <div class="disease-group-header">
+                        <span>📊</span>
+                        <h4>Training Data</h4>
+                    </div>
+                    <div class="disease-tags-compact">
+                        <span class="disease-tag-sm disease">13,474 Images</span>
+                        <span class="disease-tag-sm disease">15 Classes</span>
+                        <span class="disease-tag-sm disease">3 Crops</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Supported Classes -->
+        <div class="sidebar-section">
+            <h3><span>🎯</span> Trained Classes (15 Total)</h3>
+            <div class="disease-list">
+                <!-- Pepper -->
+                <div class="disease-group">
+                    <div class="disease-group-header">
+                        <span>🌶️</span>
+                        <h4>Pepper</h4>
+                    </div>
+                    <div class="disease-tags-compact">
+                        <span class="disease-tag-sm disease">Bacterial Spot</span>
+                        <span class="disease-tag-sm healthy">Healthy</span>
+                    </div>
+                </div>
+
+                <!-- Potato -->
+                <div class="disease-group">
+                    <div class="disease-group-header">
+                        <span>🥔</span>
+                        <h4>Potato</h4>
+                    </div>
+                    <div class="disease-tags-compact">
+                        <span class="disease-tag-sm disease">Early Blight</span>
+                        <span class="disease-tag-sm disease">Late Blight</span>
+                        <span class="disease-tag-sm healthy">Healthy</span>
+                    </div>
+                </div>
+
+                <!-- Tomato -->
+                <div class="disease-group">
+                    <div class="disease-group-header">
+                        <span>🍅</span>
+                        <h4>Tomato</h4>
+                    </div>
+                    <div class="disease-tags-compact">
+                        <span class="disease-tag-sm disease">Bacterial Spot</span>
+                        <span class="disease-tag-sm disease">Early Blight</span>
+                        <span class="disease-tag-sm disease">Late Blight</span>
+                        <span class="disease-tag-sm disease">Leaf Mold</span>
+                        <span class="disease-tag-sm disease">Septoria Leaf Spot</span>
+                        <span class="disease-tag-sm disease">Spider Mites (Two-spotted)</span>
+                        <span class="disease-tag-sm disease">Target Spot</span>
+                        <span class="disease-tag-sm disease">Yellow Leaf Curl Virus</span>
+                        <span class="disease-tag-sm disease">Mosaic Virus</span>
+                        <span class="disease-tag-sm healthy">Healthy</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="sidebar-section">
+            <h3><span>🔍</span> Legend</h3>
+            <div class="disease-tags-compact">
+                <span class="disease-tag-sm disease">Disease Classes</span>
+                <span class="disease-tag-sm healthy">Healthy Classes</span>
+            </div>
+        </div>
+    </div>
+</aside>
 
 <script>
     const uploadZone = document.getElementById('uploadZone');
@@ -1084,6 +1384,24 @@
     function hideError() {
         errorCard.style.display = 'none';
     }
+
+    // ── SIDEBAR FUNCTIONS ──
+    function openSidebar() {
+        document.getElementById('sidebarOverlay').classList.add('active');
+        document.getElementById('aboutSidebar').classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        document.getElementById('sidebarOverlay').classList.remove('active');
+        document.getElementById('aboutSidebar').classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    // Close sidebar on Escape key
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeSidebar();
+    });
 </script>
 </body>
 </html>
