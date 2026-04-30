@@ -1227,7 +1227,7 @@
 
         try {
             const base64 = await fileToBase64(selectedFile);
-            const response = await fetch('/v1/prediction/', {
+            const response = await fetch('https://moeenuddin01-plant-disease-api.hf.space/v1/prediction/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ image_base64: base64 })
